@@ -195,7 +195,7 @@ export default function DoctorRegisterPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pale-pink via-white to-pale-cyan-blue py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-brand-pink/30 via-white to-brand-blue-light/20 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -210,38 +210,40 @@ export default function DoctorRegisterPage() {
               />
             </Link>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Join HHWH Network</h1>
-          <p className="text-gray-600">Register as a healthcare professional</p>
+          <h1 className="text-3xl font-heading font-bold text-foreground mb-2">Join HHWH Network</h1>
+          <p className="text-muted-foreground">Register as a healthcare professional</p>
         </div>
 
         {/* Progress Indicator */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-center mb-4">
             {steps.map((step, index) => {
               const Icon = step.icon
               const isActive = index === currentStep
               const isCompleted = index < currentStep
               
               return (
-                <div key={index} className="flex flex-1 items-center">
-                  <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors
-                    ${isCompleted 
-                      ? 'bg-brand-green border-brand-green text-white' 
-                      : isActive 
-                        ? 'bg-brand-blue border-brand-blue text-white'
-                        : 'bg-white border-gray-300 text-gray-400'
-                    }
-                  `}>
-                    {isCompleted ? (
-                      <CheckCircle className="h-5 w-5" />
-                    ) : (
-                      <Icon className="h-5 w-5" />
-                    )}
+                <div key={index} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div className={`
+                      w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors
+                      ${isCompleted 
+                        ? 'bg-brand-green border-brand-green text-white' 
+                        : isActive 
+                          ? 'bg-brand-orange border-brand-orange text-white'
+                          : 'bg-white border-gray-300 text-gray-400'
+                      }
+                    `}>
+                      {isCompleted ? (
+                        <CheckCircle className="h-6 w-6" />
+                      ) : (
+                        <Icon className="h-6 w-6" />
+                      )}
+                    </div>
                   </div>
                   {index < steps.length - 1 && (
                     <div className={`
-                      flex-1 h-0.5 mx-4 transition-colors
+                      w-16 h-0.5 mx-4 transition-colors
                       ${isCompleted ? 'bg-brand-green' : 'bg-gray-300'}
                     `} />
                   )}
@@ -249,18 +251,18 @@ export default function DoctorRegisterPage() {
               )
             })}
           </div>
-          <div className="text-center">
-            <h2 className="text-lg font-semibold text-gray-900">{steps[currentStep].title}</h2>
-            <p className="text-sm text-gray-600">{steps[currentStep].description}</p>
+          <div className="text-center mt-4">
+            <h2 className="text-xl font-heading font-semibold text-foreground">{steps[currentStep].title}</h2>
+            <p className="text-sm text-muted-foreground">{steps[currentStep].description}</p>
           </div>
         </div>
 
         {/* Registration Form */}
-        <Card className="shadow-xl border-0">
+        <Card className="card-healthcare shadow-xl">
           <CardContent className="p-6">
             {error && (
-              <Alert className="border-vivid-red/20 bg-vivid-red/5 mb-4">
-                <AlertDescription className="text-vivid-red text-sm">
+              <Alert className="border-brand-red/20 bg-brand-red/5 mb-4">
+                <AlertDescription className="text-brand-red text-sm">
                   {error}
                 </AlertDescription>
               </Alert>
@@ -270,7 +272,7 @@ export default function DoctorRegisterPage() {
             {currentStep === 0 && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Full Name *</label>
+                  <label className="text-sm font-medium text-foreground">Full Name *</label>
                   <Input
                     value={formData.full_name}
                     onChange={(e) => handleInputChange('full_name', e.target.value)}
@@ -281,7 +283,7 @@ export default function DoctorRegisterPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Email Address *</label>
+                    <label className="text-sm font-medium text-foreground">Email Address *</label>
                     <Input
                       type="email"
                       value={formData.email}
@@ -291,7 +293,7 @@ export default function DoctorRegisterPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Phone Number *</label>
+                    <label className="text-sm font-medium text-foreground">Phone Number *</label>
                     <Input
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
@@ -303,7 +305,7 @@ export default function DoctorRegisterPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Password *</label>
+                    <label className="text-sm font-medium text-foreground">Password *</label>
                     <div className="relative mt-1">
                       <Input
                         type={showPassword ? 'text' : 'password'}
@@ -322,7 +324,7 @@ export default function DoctorRegisterPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Confirm Password *</label>
+                    <label className="text-sm font-medium text-foreground">Confirm Password *</label>
                     <div className="relative mt-1">
                       <Input
                         type={showConfirmPassword ? 'text' : 'password'}
@@ -480,7 +482,7 @@ export default function DoctorRegisterPage() {
                 {currentStep < steps.length - 1 ? (
                   <Button
                     onClick={handleNext}
-                    className="bg-brand-blue hover:bg-brand-blue/90 text-white"
+                    className="btn-healthcare-primary"
                     disabled={loading}
                   >
                     Next
@@ -488,7 +490,7 @@ export default function DoctorRegisterPage() {
                 ) : (
                   <Button
                     onClick={handleSubmit}
-                    className="bg-brand-green hover:bg-brand-green/90 text-white"
+                    className="btn-healthcare-primary"
                     disabled={loading}
                   >
                     {loading ? (
@@ -508,11 +510,11 @@ export default function DoctorRegisterPage() {
 
         {/* Footer */}
         <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link 
               href="/auth/doctor/login" 
-              className="text-vivid-cyan-blue hover:text-vivid-cyan-blue/80 font-medium"
+              className="text-brand-blue hover:underline font-medium"
             >
               Sign in here
             </Link>
