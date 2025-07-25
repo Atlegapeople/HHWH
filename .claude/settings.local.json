@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(npm run build:*)",
+      "Bash(rm:*)",
+      "Bash(npm run dev:*)",
+      "Bash(rg:*)",
+      "Bash(ls:*)",
+      "Bash(npx supabase:*)",
+      "Bash(node:*)",
+      "Bash(mv:*)",
+      "Bash(timeout:*)",
+      "Bash(find:*)"
+    ],
+    "deny": []
+  }
+}

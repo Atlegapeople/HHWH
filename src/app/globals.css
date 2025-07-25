@@ -14,7 +14,7 @@
   --color-brand-orange: #ff6900;
   --color-brand-red: #cf2e2e;
   --color-brand-pink: #f7dad7;
-  --color-brand-green: #00d084;
+  --color-brand-green: #368489;
   --color-brand-green-light: #7bdcb5;
   --color-brand-blue: #0693e3;
   --color-brand-blue-light: #8ed1fc;
@@ -64,7 +64,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: var(--color-brand-orange);
+  --primary: var(--color-brand-green);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -142,7 +142,7 @@
 @layer components {
   /* Healthcare Brand Components */
   .btn-healthcare-primary {
-    @apply bg-brand-orange text-white hover:bg-brand-red transition-colors;
+    @apply bg-brand-green text-white hover:bg-brand-green/90 transition-colors;
   }
   
   .btn-healthcare-success {
@@ -175,5 +175,19 @@
   
   .healthcare-gradient {
     background: linear-gradient(135deg, var(--color-brand-pink) 0%, var(--color-brand-blue-light) 100%);
+  }
+
+  /* Hero Carousel Animations */
+  @keyframes zoom-slow {
+    0% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(1.08);
+    }
+  }
+
+  .animate-zoom-slow {
+    animation: zoom-slow 7000ms ease-out forwards;
   }
 }
