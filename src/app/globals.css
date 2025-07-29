@@ -129,13 +129,139 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
+  html {
+    @apply bg-white;
+    /* Prevent mobile viewport overflow */
+    overflow-x: hidden;
+  }
+  
   body {
     @apply bg-background text-foreground;
+    /* Ensure white background extends beyond viewport */
+    background-color: white !important;
+    /* Prevent horizontal scrolling on mobile */
+    overflow-x: hidden;
+    /* Prevent mobile browser color bleeding */
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
   }
   
   /* Healthcare-specific typography */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
+  }
+
+  /* Mobile-specific fixes */
+  @media (max-width: 768px) {
+    html, body {
+      background-color: white !important;
+      /* Prevent address bar color bleed */
+      -webkit-background-clip: padding-box;
+      background-clip: padding-box;
+    }
+    
+    /* Fix iOS Safari viewport issues */
+    #__next {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background-color: white;
+    }
+  }
+
+  /* Security & Corporate Network Enhancements */
+  
+  /* Prevent content selection for sensitive data */
+  .sensitive-data {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent right-click context menu on images */
+  img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+    pointer-events: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Re-enable pointer events for interactive images */
+  img[role="button"], 
+  img.interactive,
+  .logo img {
+    pointer-events: auto;
+  }
+
+  /* Prevent text selection in sensitive areas */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Corporate-friendly print styles */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    
+    body {
+      background: white !important;
+      color: black !important;
+    }
+    
+    a[href]:after {
+      content: none !important;
+    }
+  }
+
+  /* Accessibility enhancements for corporate compliance */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Focus indicators for keyboard navigation */
+  *:focus-visible {
+    outline: 2px solid #368489;
+    outline-offset: 2px;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    :root {
+      --background: #ffffff;
+      --foreground: #000000;
+      --primary: #000000;
+      --secondary: #666666;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 

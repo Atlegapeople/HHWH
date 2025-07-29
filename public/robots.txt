@@ -1,0 +1,34 @@
+# HHWH Online Clinic - Robots.txt
+# Healthcare website - allowing responsible crawling
+
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /services
+Allow: /privacy
+Allow: /terms
+Allow: /disclaimer
+Allow: /cookies
+
+# Disallow sensitive areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /patient/
+Disallow: /doctor/
+Disallow: /_next/
+Disallow: /test*
+Disallow: *.json
+
+# Allow specific public API endpoints for verification
+Allow: /api/health
+
+# Sitemap location
+Sitemap: https://hhwh.vercel.app/sitemap.xml
+
+# Crawl delay for responsible crawling
+Crawl-delay: 1
+
+# Healthcare-specific guidelines
+# This site contains medical information
+# Please respect patient privacy and data protection laws

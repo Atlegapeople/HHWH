@@ -1,0 +1,16 @@
+Contact: mailto:security@hhwh.co.za
+Contact: https://hhwh.vercel.app/contact
+Expires: 2025-12-31T23:59:59.000Z
+Preferred-Languages: en, af
+Canonical: https://hhwh.vercel.app/.well-known/security.txt
+
+# HHWH Online Clinic Security Policy
+# 
+# We take security seriously. This healthcare platform handles
+# sensitive medical information and we appreciate responsible
+# disclosure of any security vulnerabilities.
+#
+# Please report security issues to the contact information above.
+# We will respond to legitimate security reports within 48 hours.
+#
+# Thank you for helping keep our patients' data safe.
