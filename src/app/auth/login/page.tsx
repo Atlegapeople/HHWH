@@ -23,7 +23,6 @@ function ContentWithSearchParams() {
   const { signIn, signInWithGoogle } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || '/dashboard'
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,7 +40,13 @@ function ContentWithSearchParams() {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push(redirectTo)
+      // Check if there's a specific redirect parameter
+      const redirect = searchParams.get('redirect')
+      if (redirect) {
+        router.push(redirect)
+      }
+      // Otherwise, let AuthContext handle the role-based redirect automatically
+      // No manual redirect needed here
     }
   }
 

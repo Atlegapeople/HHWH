@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/profile']
+  const protectedRoutes = ['/profile', '/patient', '/doctor', '/admin']
   const isProtectedRoute = protectedRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
   )
@@ -43,9 +43,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // If user is authenticated and trying to access auth pages, redirect to dashboard
+  // If user is authenticated and trying to access auth pages, redirect based on role
   if (user && request.nextUrl.pathname.startsWith('/auth/')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    const userRole = (user as any).user_metadata?.role || 'patient'
+    let dashboardPath = '/patient/dashboard'
+    
+    switch (userRole) {
+      case 'doctor':
+        dashboardPath = '/doctor/dashboard'
+        break
+      case 'admin':
+        dashboardPath = '/admin/dashboard'
+        break
+      default:
+        dashboardPath = '/patient/dashboard'
+        break
+    }
+    
+    return NextResponse.redirect(new URL(dashboardPath, request.url))
   }
 
   return supabaseResponse
