@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { UserPlus, CheckCircle, Clock, FileText, AlertCircle } from "lucide-react"
+import { LoadingSpinner } from '@/components/ui/loading'
 import Link from "next/link"
 import { checkPatientByEmail, getPatientStatus, PatientStatus } from '@/lib/supabase/patient-status'
 
@@ -28,7 +29,8 @@ export function RegistrationCard({ userEmail, patientData: preFetchedPatientData
     try {
       const { exists, patient } = await checkPatientByEmail(emailToCheck)
       setPatientData(patient)
-      setPatientStatus(getPatientStatus(patient))
+      const status = await getPatientStatus(patient)
+      setPatientStatus(status)
     } catch (error) {
       console.error('Failed to check patient status:', error)
     } finally {
@@ -37,14 +39,19 @@ export function RegistrationCard({ userEmail, patientData: preFetchedPatientData
   }
 
   useEffect(() => {
-    if (preFetchedPatientData) {
-      // Use pre-fetched data
-      setPatientData(preFetchedPatientData)
-      setPatientStatus(getPatientStatus(preFetchedPatientData))
-      setLoading(false)
-    } else if (userEmail && !hideLoading) {
-      checkStatus(userEmail)
+    const updateStatus = async () => {
+      if (preFetchedPatientData) {
+        // Use pre-fetched data
+        setPatientData(preFetchedPatientData)
+        const status = await getPatientStatus(preFetchedPatientData)
+        setPatientStatus(status)
+        setLoading(false)
+      } else if (userEmail && !hideLoading) {
+        checkStatus(userEmail)
+      }
     }
+
+    updateStatus()
   }, [userEmail, preFetchedPatientData, hideLoading])
 
   const handleCheckStatus = () => {
@@ -60,7 +67,7 @@ export function RegistrationCard({ userEmail, patientData: preFetchedPatientData
       return (
         <CardContent className="text-center">
           <div className="py-8">
-            <div className="mx-auto w-8 h-8 border-2 border-brand-orange border-t-transparent rounded-full animate-spin mb-4"></div>
+            <LoadingSpinner size="md" className="mx-auto mb-4" />
             <CardDescription>
               Checking your registration status...
             </CardDescription>
@@ -73,24 +80,13 @@ export function RegistrationCard({ userEmail, patientData: preFetchedPatientData
       return (
         <CardContent className="text-center">
           <CardDescription className="mb-4">
-            Enter your email to check your registration status or start a new registration.
+            Please register to access your patient portal and begin your hormone health journey.
           </CardDescription>
-          <div className="space-y-3">
-            <input
-              type="email"
-              placeholder="Enter your email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent"
-            />
-            <Button 
-              onClick={handleCheckStatus}
-              disabled={!email || loading}
-              className="btn-healthcare-primary w-full"
-            >
-              {loading ? 'Checking...' : 'Check Status'}
+          <Link href="/auth/signup">
+            <Button className="btn-healthcare-primary w-full">
+              Register Now
             </Button>
-          </div>
+          </Link>
         </CardContent>
       )
     }
@@ -107,18 +103,39 @@ export function RegistrationCard({ userEmail, patientData: preFetchedPatientData
                 Register Now
               </Button>
             </Link>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setShowEmailInput(true)}
-              className="mt-2 text-xs"
-            >
-              Check different email
-            </Button>
           </CardContent>
         )
 
-      case 'registered':
+      case 'profile_incomplete':
+        return (
+          <CardContent className="text-center">
+            <div className="mb-4">
+              <div className="mx-auto bg-brand-blue/10 p-3 rounded-full mb-3 w-fit">
+                <UserPlus className="h-6 w-6 text-brand-blue" />
+              </div>
+              <Badge variant="outline" className="bg-brand-blue/10 text-brand-blue border-brand-blue/20">
+                Profile Incomplete
+              </Badge>
+            </div>
+            <CardDescription className="mb-4">
+              Please complete your profile to access all features.
+            </CardDescription>
+            <div className="space-y-2">
+              <Link href="/patient/register">
+                <Button className="btn-healthcare-primary w-full">
+                  Complete Profile
+                </Button>
+              </Link>
+              <Link href="/patient/dashboard">
+                <Button variant="outline" className="w-full">
+                  View Dashboard
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        )
+
+      case 'assessment_needed':
       case 'active':
         return (
           <CardContent className="text-center">
@@ -127,11 +144,14 @@ export function RegistrationCard({ userEmail, patientData: preFetchedPatientData
                 <CheckCircle className="h-6 w-6 text-brand-green" />
               </div>
               <Badge variant="outline" className="bg-brand-green/10 text-brand-green border-brand-green/20">
-                Registration Complete
+                {patientStatus === 'assessment_needed' ? 'Assessment Ready' : 'Active'}
               </Badge>
             </div>
             <CardDescription className="mb-4">
-              Welcome back, {patientData?.full_name}! Your registration is complete.
+              {patientStatus === 'assessment_needed' 
+                ? 'Your registration is complete. Take your health assessment next.'
+                : 'Your profile is all set.'
+              }
             </CardDescription>
             <div className="space-y-2">
               <Link href="/patient/dashboard">
@@ -139,20 +159,20 @@ export function RegistrationCard({ userEmail, patientData: preFetchedPatientData
                   View Dashboard
                 </Button>
               </Link>
-              <Link href="/patient/book-appointment">
-                <Button variant="outline" className="w-full">
-                  Book Consultation
-                </Button>
-              </Link>
+              {patientStatus === 'assessment_needed' ? (
+                <Link href="/patient/assessment">
+                  <Button variant="outline" className="w-full">
+                    Take Health Assessment
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/patient/book-appointment">
+                  <Button variant="outline" className="w-full">
+                    Book Consultation
+                  </Button>
+                </Link>
+              )}
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setShowEmailInput(true)}
-              className="mt-2 text-xs"
-            >
-              Check different email
-            </Button>
           </CardContent>
         )
 
@@ -182,14 +202,6 @@ export function RegistrationCard({ userEmail, patientData: preFetchedPatientData
                 </Button>
               </Link>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setShowEmailInput(true)}
-              className="mt-2 text-xs"
-            >
-              Check different email
-            </Button>
           </CardContent>
         )
 
@@ -211,23 +223,25 @@ export function RegistrationCard({ userEmail, patientData: preFetchedPatientData
 
   const getCardIcon = () => {
     switch (patientStatus) {
-      case 'registered':
+      case 'profile_incomplete':
+        return <UserPlus className="h-8 w-8 text-brand-blue" />
+      case 'assessment_needed':
+        return <CheckCircle className="h-8 w-8 text-brand-green" />
       case 'active':
         return <CheckCircle className="h-8 w-8 text-brand-green" />
-      case 'documents_pending':
-        return <Clock className="h-8 w-8 text-brand-amber" />
       default:
-        return <UserPlus className="h-8 w-8 text-brand-orange" />
+        return <UserPlus className="h-8 w-8 text-brand-green" />
     }
   }
 
   const getCardTitle = () => {
     switch (patientStatus) {
-      case 'registered':
+      case 'profile_incomplete':
+        return 'Complete Your Profile'
+      case 'assessment_needed':
+        return 'Take Assessment'
       case 'active':
-        return 'Registration Complete'
-      case 'documents_pending':
-        return 'Registration Pending'
+        return 'Patient Dashboard'
       default:
         return 'New Patient Registration'
     }
@@ -236,7 +250,7 @@ export function RegistrationCard({ userEmail, patientData: preFetchedPatientData
   return (
     <Card className="card-healthcare group hover:shadow-lg transition-shadow cursor-pointer">
       <CardHeader className="text-center">
-        <div className="mx-auto bg-brand-orange/10 p-3 rounded-full mb-3 group-hover:bg-brand-orange/20 transition-colors">
+        <div className="mx-auto bg-brand-green/10 p-3 rounded-full mb-3 group-hover:bg-brand-green/20 transition-colors group-hover:scale-110 transition-all duration-300">
           {getCardIcon()}
         </div>
         <CardTitle className="font-heading text-lg">{getCardTitle()}</CardTitle>

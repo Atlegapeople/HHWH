@@ -17,6 +17,7 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import Link from 'next/link'
+import { LoadingScreen } from '@/components/ui/loading'
 
 interface DashboardStats {
   pending_doctors: number
@@ -68,58 +69,56 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
-      </div>
+      <LoadingScreen
+        title="Loading Admin Dashboard"
+        subtitle="Preparing system overview..."
+      />
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600">Overview of HHWH Clinic system administration</p>
+          <h1 className="text-3xl sm:text-4xl font-heading font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent mb-3">
+            Admin Dashboard
+          </h1>
+          <p className="text-lg text-muted-foreground font-medium">
+            Overview of HHWH Clinic system administration
+          </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Badge variant="outline" className="text-sm">
-            System Status: Active
+          <Badge className="bg-gradient-to-r from-brand-green via-brand-green to-brand-green/90 text-white border-0 px-6 py-3 shadow-lg rounded-2xl text-sm font-semibold">
+            <div className="w-2 h-2 bg-white/80 rounded-full mr-2 animate-pulse"></div>
+            System Online
           </Badge>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Pending Applications */}
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-brand-amber/5 hover:to-brand-amber/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pending Applications</p>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">Pending Applications</p>
                 <p className="text-3xl font-bold text-brand-amber">
                   {stats.pending_doctors}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground">
                   Awaiting review
                 </p>
               </div>
-              <div className="p-3 bg-brand-amber/10 rounded-full">
-                <Clock className="h-6 w-6 text-brand-amber" />
+              <div className="p-4 bg-gradient-to-br from-brand-amber to-brand-amber/80 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Clock className="h-6 w-6 text-white" />
               </div>
             </div>
             {stats.pending_doctors > 0 && (
-              <div className="mt-4">
+              <div className="mt-6">
                 <Link href="/admin/doctors">
-                  <Button size="sm" className="w-full bg-brand-amber hover:bg-brand-amber/90 text-gray-800">
+                  <Button size="sm" className="w-full bg-gradient-to-r from-brand-amber to-brand-amber/80 hover:from-brand-amber/90 hover:to-brand-amber/70 text-white border-0 shadow-md">
                     Review Applications
                   </Button>
                 </Link>
@@ -129,60 +128,60 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Approved Doctors */}
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-brand-green/5 hover:to-brand-green/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active Doctors</p>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">Active Doctors</p>
                 <p className="text-3xl font-bold text-brand-green">
                   {stats.approved_doctors}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground">
                   Approved & active
                 </p>
               </div>
-              <div className="p-3 bg-brand-green/10 rounded-full">
-                <CheckCircle className="h-6 w-6 text-brand-green" />
+              <div className="p-4 bg-gradient-to-br from-brand-green to-brand-green/80 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <CheckCircle className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Rejected Applications */}
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-brand-red/5 hover:to-brand-red/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Rejected</p>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">Rejected</p>
                 <p className="text-3xl font-bold text-brand-red">
                   {stats.rejected_doctors}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground">
                   Applications declined
                 </p>
               </div>
-              <div className="p-3 bg-brand-red/10 rounded-full">
-                <XCircle className="h-6 w-6 text-brand-red" />
+              <div className="p-4 bg-gradient-to-br from-brand-red to-brand-red/80 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <XCircle className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Total Doctors */}
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-gray-100/50 hover:to-gray-100">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Applications</p>
-                <p className="text-3xl font-bold text-gray-900">
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">Total Applications</p>
+                <p className="text-3xl font-bold text-foreground">
                   {stats.total_doctors}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground">
                   All time
                 </p>
               </div>
-              <div className="p-3 bg-gray-100 rounded-full">
-                <Users className="h-6 w-6 text-gray-600" />
+              <div className="p-4 bg-gradient-to-br from-gray-700 to-gray-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Users className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -191,72 +190,87 @@ export default function AdminDashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <UserCheck className="h-5 w-5 text-brand-blue" />
-              <span>Doctor Management</span>
+        <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-brand-blue/5 hover:to-brand-blue/10">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-3">
+              <div className="p-3 bg-gradient-to-br from-brand-blue to-brand-blue/80 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <UserCheck className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-heading font-bold text-foreground">Doctor Management</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <Link href="/admin/doctors">
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start bg-gradient-to-r from-brand-blue/10 to-brand-blue/5 hover:from-brand-blue/20 hover:to-brand-blue/10 text-brand-blue border-brand-blue/20 hover:border-brand-blue/30" variant="outline">
                 Review Applications
               </Button>
             </Link>
             <Link href="/admin/doctors/active">
-              <Button className="w-full justify-start" variant="outline">
+              <Button className="w-full justify-start bg-gradient-to-r from-brand-blue/10 to-brand-blue/5 hover:from-brand-blue/20 hover:to-brand-blue/10 text-brand-blue border-brand-blue/20 hover:border-brand-blue/30" variant="outline">
                 Manage Active Doctors
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Activity className="h-5 w-5 text-brand-green" />
-              <span>System Health</span>
+        <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-brand-green/5 hover:to-brand-green/10">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-3">
+              <div className="p-3 bg-gradient-to-br from-brand-green to-brand-green/80 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Activity className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-heading font-bold text-foreground">System Health</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span>Database Status</span>
-              <Badge className="bg-brand-green text-white">Healthy</Badge>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-brand-green/5 to-brand-green/10 rounded-xl">
+              <span className="text-sm font-medium text-foreground">Database Status</span>
+              <Badge className="bg-gradient-to-r from-brand-green to-brand-green/80 text-white border-0 shadow-sm">
+                <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5 animate-pulse"></div>
+                Healthy
+              </Badge>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span>API Status</span>
-              <Badge className="bg-brand-green text-white">Active</Badge>
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-brand-green/5 to-brand-green/10 rounded-xl">
+              <span className="text-sm font-medium text-foreground">API Status</span>
+              <Badge className="bg-gradient-to-r from-brand-green to-brand-green/80 text-white border-0 shadow-sm">
+                <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5 animate-pulse"></div>
+                Active
+              </Badge>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span>Payment Gateway</span>
-              <Badge className="bg-brand-green text-white">Connected</Badge>
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-brand-green/5 to-brand-green/10 rounded-xl">
+              <span className="text-sm font-medium text-foreground">Payment Gateway</span>
+              <Badge className="bg-gradient-to-r from-brand-green to-brand-green/80 text-white border-0 shadow-sm">
+                <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5 animate-pulse"></div>
+                Connected
+              </Badge>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5 text-brand-purple" />
-              <span>Quick Stats</span>
+        <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-brand-red/5 hover:to-brand-red/10">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-3">
+              <div className="p-3 bg-gradient-to-br from-brand-red to-brand-red/80 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <TrendingUp className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-heading font-bold text-foreground">Quick Stats</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span>Applications This Week</span>
-              <span className="font-medium">{stats.recent_applications.length}</span>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-brand-red/5 to-brand-red/10 rounded-xl">
+              <span className="text-sm font-medium text-foreground">Applications This Week</span>
+              <span className="font-bold text-brand-red text-lg">{stats.recent_applications.length}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span>Approval Rate</span>
-              <span className="font-medium">
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-brand-red/5 to-brand-red/10 rounded-xl">
+              <span className="text-sm font-medium text-foreground">Approval Rate</span>
+              <span className="font-bold text-brand-red text-lg">
                 {stats.total_doctors > 0 
                   ? Math.round((stats.approved_doctors / stats.total_doctors) * 100) 
                   : 0}%
               </span>
             </div>
             <Link href="/admin/analytics">
-              <Button className="w-full" variant="outline">
+              <Button className="w-full bg-gradient-to-r from-brand-red/10 to-brand-red/5 hover:from-brand-red/20 hover:to-brand-red/10 text-brand-red border-brand-red/20 hover:border-brand-red/30" variant="outline">
                 View Full Analytics
               </Button>
             </Link>
@@ -266,40 +280,46 @@ export default function AdminDashboardPage() {
 
       {/* Recent Applications */}
       {stats.recent_applications.length > 0 && (
-        <Card>
-          <CardHeader>
+        <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-lg">
+          <CardHeader className="pb-4">
             <CardTitle className="flex items-center justify-between">
-              <span>Recent Applications</span>
+              <div className="flex items-center space-x-3">
+                <div className="p-3 bg-gradient-to-br from-brand-blue to-brand-green rounded-2xl shadow-lg">
+                  <UserCheck className="h-5 w-5 text-white" />
+                </div>
+                <span className="font-heading font-bold text-foreground">Recent Applications</span>
+              </div>
               <Link href="/admin/doctors">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="bg-gradient-to-r from-brand-blue/10 to-brand-blue/5 hover:from-brand-blue/20 hover:to-brand-blue/10 text-brand-blue border-brand-blue/20 hover:border-brand-blue/30">
                   View All
                 </Button>
               </Link>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {stats.recent_applications.map((doctor: any) => (
-                <div key={doctor.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={doctor.id} className="group flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50/50 hover:from-gray-50 hover:to-white rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-300">
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                      <UserCheck className="h-5 w-5 text-gray-600" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-brand-blue/10 to-brand-green/10 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                      <UserCheck className="h-6 w-6 text-brand-blue" />
                     </div>
                     <div>
-                      <p className="font-medium">{doctor.full_name}</p>
-                      <p className="text-sm text-gray-600">{doctor.specialization}</p>
+                      <p className="font-semibold text-foreground group-hover:text-brand-blue transition-colors duration-300">{doctor.full_name}</p>
+                      <p className="text-sm text-muted-foreground">{doctor.specialization}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Badge 
-                      className={
+                      className={`border-0 shadow-sm ${
                         doctor.approval_status === 'approved' || doctor.is_active
-                          ? 'bg-brand-green text-white'
+                          ? 'bg-gradient-to-r from-brand-green to-brand-green/80 text-white'
                           : doctor.approval_status === 'rejected'
-                          ? 'bg-brand-red text-white'
-                          : 'bg-brand-amber text-gray-800'
-                      }
+                          ? 'bg-gradient-to-r from-brand-red to-brand-red/80 text-white'
+                          : 'bg-gradient-to-r from-brand-amber to-brand-amber/80 text-white'
+                      }`}
                     >
+                      <div className="w-1.5 h-1.5 bg-white/80 rounded-full mr-1.5"></div>
                       {doctor.approval_status === 'approved' || doctor.is_active
                         ? 'Approved'
                         : doctor.approval_status === 'rejected'
@@ -308,7 +328,7 @@ export default function AdminDashboardPage() {
                       }
                     </Badge>
                     <Link href={`/admin/doctors?view=${doctor.id}`}>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" className="bg-gradient-to-r from-gray-50 to-white hover:from-white hover:to-gray-50 border-gray-200 hover:border-gray-300 text-foreground group-hover:text-brand-blue transition-colors duration-300">
                         Review
                       </Button>
                     </Link>
@@ -322,20 +342,22 @@ export default function AdminDashboardPage() {
 
       {/* System Alerts */}
       {stats.pending_doctors > 0 && (
-        <Card className="border-amber-200 bg-amber-50">
+        <Card className="border-0 bg-gradient-to-r from-brand-amber/10 via-brand-amber/5 to-brand-amber/10 shadow-lg">
           <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <AlertTriangle className="h-6 w-6 text-amber-600" />
-              <div>
-                <h3 className="font-medium text-amber-800">
+            <div className="flex items-center space-x-4">
+              <div className="p-4 bg-gradient-to-br from-brand-amber to-brand-amber/80 rounded-2xl shadow-lg animate-pulse">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-heading font-bold text-foreground text-lg">
                   Action Required: {stats.pending_doctors} Pending Application{stats.pending_doctors !== 1 ? 's' : ''}
                 </h3>
-                <p className="text-sm text-amber-700 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Doctor applications are waiting for your review and approval.
                 </p>
               </div>
               <Link href="/admin/doctors">
-                <Button className="bg-amber-600 hover:bg-amber-700 text-white ml-auto">
+                <Button className="bg-gradient-to-r from-brand-amber to-brand-amber/80 hover:from-brand-amber/90 hover:to-brand-amber/70 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 px-6">
                   Review Now
                 </Button>
               </Link>

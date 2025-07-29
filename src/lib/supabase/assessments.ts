@@ -323,3 +323,30 @@ export function getSeverityBadge(severity: string): { variant: string; className
       return { variant: 'outline', className: '' }
   }
 }
+
+// Get assessment by ID
+export async function getAssessmentById(assessmentId: string) {
+  const supabase = createClient()
+  
+  try {
+    const { data, error } = await supabase
+      .from('symptom_assessments')
+      .select(`
+        *,
+        patient:patients(full_name, email)
+      `)
+      .eq('id', assessmentId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching assessment by ID:', error)
+      throw error
+    }
+
+    return data
+
+  } catch (error) {
+    console.error('Failed to fetch assessment by ID:', error)
+    throw error
+  }
+}

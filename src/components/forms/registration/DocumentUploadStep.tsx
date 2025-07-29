@@ -1,266 +1,281 @@
 'use client'
 
 import { useState } from 'react'
-import { UseFormReturn } from 'react-hook-form'
-import { PatientRegistration } from '@/lib/validations/patient'
+import { useFormContext } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
-import { Upload, FileText, Check, X, Camera, Shield } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Card, CardContent } from '@/components/ui/card'
+import { Upload, FileText, CheckCircle, X, AlertCircle } from 'lucide-react'
+import { PatientRegistration } from '@/lib/validations/patient'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/contexts/AuthContext'
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface DocumentUploadStepProps {
-  form: UseFormReturn<PatientRegistration>
+  // Add any specific props if needed
 }
 
-interface UploadedDocument {
-  id: string
-  name: string
-  type: 'id_document' | 'medical_aid_card'
-  size: number
-  status: 'uploading' | 'uploaded' | 'error'
-  url?: string
+interface UploadedFile {
+  file: File
+  url: string
+  uploadedUrl?: string
+  uploading: boolean
+  error?: string
 }
 
-export function DocumentUploadStep({ form }: DocumentUploadStepProps) {
-  const [documents, setDocuments] = useState<UploadedDocument[]>([])
-  const { watch } = form
-  const medicalAidScheme = watch('medical_aid_scheme')
+export function DocumentUploadStep({}: DocumentUploadStepProps) {
+  const { setValue, watch } = useFormContext<PatientRegistration>()
+  const { user } = useAuth()
+  const [idDocument, setIdDocument] = useState<UploadedFile | null>(null)
+  const [medicalAidCard, setMedicalAidCard] = useState<UploadedFile | null>(null)
+  
+  const supabase = createClient()
 
-  const handleFileUpload = async (file: File, type: 'id_document' | 'medical_aid_card') => {
-    const documentId = Math.random().toString(36).substr(2, 9)
+  const uploadToSupabase = async (file: File, folder: string): Promise<string> => {
+    if (!user) throw new Error('User not authenticated')
     
-    // Add document with uploading status
-    const newDocument: UploadedDocument = {
-      id: documentId,
-      name: file.name,
-      type,
-      size: file.size,
-      status: 'uploading'
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${user.id}/${folder}/${Date.now()}.${fileExt}`
+    
+    const { data, error } = await supabase.storage
+      .from('patient-documents')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (error) throw error
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('patient-documents')
+      .getPublicUrl(data.path)
+
+    return publicUrl
+  }
+
+  const handleFileUpload = async (file: File, type: 'id' | 'medical_aid') => {
+    // Validate file
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
+    
+    if (file.size > maxSize) {
+      const errorMsg = 'File size must be less than 5MB'
+      if (type === 'id') {
+        setIdDocument(prev => prev ? { ...prev, error: errorMsg } : null)
+      } else {
+        setMedicalAidCard(prev => prev ? { ...prev, error: errorMsg } : null)
+      }
+      return
     }
+
+    if (!allowedTypes.includes(file.type)) {
+      const errorMsg = 'Only JPG, PNG, and PDF files are allowed'
+      if (type === 'id') {
+        setIdDocument(prev => prev ? { ...prev, error: errorMsg } : null)
+      } else {
+        setMedicalAidCard(prev => prev ? { ...prev, error: errorMsg } : null)
+      }
+      return
+    }
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file)
     
-    setDocuments(prev => [...prev, newDocument])
+    // Set uploading state
+    const uploadingFile: UploadedFile = {
+      file,
+      url: previewUrl,
+      uploading: true
+    }
+
+    if (type === 'id') {
+      setIdDocument(uploadingFile)
+    } else {
+      setMedicalAidCard(uploadingFile)
+    }
 
     try {
-      // Simulate file upload (replace with actual Supabase storage upload)
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Upload to Supabase
+      const uploadedUrl = await uploadToSupabase(file, type === 'id' ? 'id-documents' : 'medical-aid-cards')
       
-      // Update status to uploaded
-      setDocuments(prev => 
-        prev.map(doc => 
-          doc.id === documentId 
-            ? { ...doc, status: 'uploaded', url: `https://example.com/${file.name}` }
-            : doc
-        )
-      )
+      // Update state with success
+      const successFile: UploadedFile = {
+        file,
+        url: previewUrl,
+        uploadedUrl,
+        uploading: false
+      }
+
+      if (type === 'id') {
+        setIdDocument(successFile)
+        setValue('id_document_url', uploadedUrl)
+      } else {
+        setMedicalAidCard(successFile)
+        setValue('medical_aid_card_url', uploadedUrl)
+      }
+
     } catch (error) {
-      // Update status to error
-      setDocuments(prev => 
-        prev.map(doc => 
-          doc.id === documentId 
-            ? { ...doc, status: 'error' }
-            : doc
-        )
-      )
+      console.error('Upload error:', error)
+      const errorMsg = error instanceof Error ? error.message : 'Upload failed'
+      
+      if (type === 'id') {
+        setIdDocument(prev => prev ? { ...prev, uploading: false, error: errorMsg } : null)
+      } else {
+        setMedicalAidCard(prev => prev ? { ...prev, uploading: false, error: errorMsg } : null)
+      }
     }
   }
 
-  const removeDocument = (documentId: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== documentId))
+  const removeFile = (type: 'id' | 'medical_aid') => {
+    if (type === 'id') {
+      if (idDocument?.url) URL.revokeObjectURL(idDocument.url)
+      setIdDocument(null)
+      setValue('id_document_url', '')
+    } else {
+      if (medicalAidCard?.url) URL.revokeObjectURL(medicalAidCard.url)
+      setMedicalAidCard(null)
+      setValue('medical_aid_card_url', '')
+    }
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-
-  const idDocuments = documents.filter(doc => doc.type === 'id_document')
-  const medicalAidDocuments = documents.filter(doc => doc.type === 'medical_aid_card')
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <div className="mx-auto bg-brand-purple/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-          <Upload className="h-8 w-8 text-brand-purple" />
-        </div>
-        <h3 className="text-lg font-heading font-semibold mb-2">Document Upload</h3>
-        <p className="text-sm text-muted-foreground">
-          Please upload clear photos or scans of your identification and medical aid documents.
-        </p>
-      </div>
-
-      <Alert>
-        <Shield className="h-4 w-4" />
-        <AlertDescription>
-          All documents are encrypted and stored securely. We use bank-level security to protect your personal information.
-        </AlertDescription>
-      </Alert>
-
-      {/* ID Document Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-medium flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              South African ID Document *
-            </h4>
-            <p className="text-sm text-muted-foreground">
-              Upload a clear photo of your South African ID book or card
-            </p>
+  const FileUploadArea = ({ 
+    type, 
+    title, 
+    description, 
+    uploadedFile, 
+    color 
+  }: { 
+    type: 'id' | 'medical_aid'
+    title: string
+    description: string
+    uploadedFile: UploadedFile | null
+    color: string 
+  }) => (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-start gap-4">
+          <div className={`bg-${color}-50 p-3 rounded-full`}>
+            <FileText className={`h-6 w-6 text-${color}-600`} />
           </div>
-          <label className="cursor-pointer">
+          <div className="flex-1">
+            <h4 className="font-semibold mb-1">{title} *</h4>
+            <p className="text-sm text-gray-600 mb-4">{description}</p>
+            
+            {uploadedFile ? (
+              <div className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {uploadedFile.uploading ? (
+                      <div className="relative">
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-slate-200"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-transparent border-t-[#217B82] absolute top-0 left-0"></div>
+                      </div>
+                    ) : uploadedFile.error ? (
+                      <AlertCircle className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium">{uploadedFile.file.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                      {uploadedFile.error && (
+                        <p className="text-xs text-red-600 mt-1">{uploadedFile.error}</p>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFile(type)}
+                    disabled={uploadedFile.uploading}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div 
+                className={`border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-${color}-300 transition-colors cursor-pointer`}
+                onClick={() => document.getElementById(`${type}-upload`)?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  const files = Array.from(e.dataTransfer.files)
+                  if (files[0]) handleFileUpload(files[0], type)
+                }}
+              >
+                <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 mb-2">
+                  Drag and drop your {type === 'id' ? 'ID document' : 'medical aid card'} here, or click to browse
+                </p>
+                <Button variant="outline" size="sm" type="button">
+                  Upload {type === 'id' ? 'ID' : 'Card'}
+                </Button>
+              </div>
+            )}
+            
             <input
+              id={`${type}-upload`}
               type="file"
               accept="image/*,.pdf"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0]
-                if (file) handleFileUpload(file, 'id_document')
+                if (file) handleFileUpload(file, type)
               }}
             />
-            <Button type="button" variant="outline" className="flex items-center gap-2">
-              <Camera className="h-4 w-4" />
-              Upload ID
-            </Button>
-          </label>
-        </div>
-
-        {/* ID Document List */}
-        {idDocuments.map((doc) => (
-          <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${
-                doc.status === 'uploaded' ? 'bg-brand-green/10' :
-                doc.status === 'error' ? 'bg-brand-red/10' : 'bg-brand-orange/10'
-              }`}>
-                {doc.status === 'uploaded' ? (
-                  <Check className="h-4 w-4 text-brand-green" />
-                ) : doc.status === 'error' ? (
-                  <X className="h-4 w-4 text-brand-red" />
-                ) : (
-                  <Upload className="h-4 w-4 text-brand-orange animate-pulse" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium text-sm">{doc.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(doc.size)} • {doc.status === 'uploading' ? 'Uploading...' : 
-                   doc.status === 'uploaded' ? 'Uploaded successfully' : 'Upload failed'}
-                </p>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => removeDocument(doc.id)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
-        ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  const medicalAidScheme = watch('medical_aid_scheme')
+  
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-xl font-semibold mb-2">Upload Documents</h3>
+        <p className="text-gray-600 text-sm">
+          Please upload clear photos of your required documents
+        </p>
       </div>
 
-      {/* Medical Aid Card Section */}
-      {medicalAidScheme && medicalAidScheme !== '' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Medical Aid Card *
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Upload a clear photo of your {medicalAidScheme} membership card
-              </p>
-            </div>
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleFileUpload(file, 'medical_aid_card')
-                }}
-              />
-              <Button type="button" variant="outline" className="flex items-center gap-2">
-                <Camera className="h-4 w-4" />
-                Upload Card
-              </Button>
-            </label>
-          </div>
+      <FileUploadArea
+        type="id"
+        title="South African ID Document"
+        description="Upload a clear photo of your South African ID book or card"
+        uploadedFile={idDocument}
+        color="blue"
+      />
 
-          {/* Medical Aid Document List */}
-          {medicalAidDocuments.map((doc) => (
-            <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${
-                  doc.status === 'uploaded' ? 'bg-brand-green/10' :
-                  doc.status === 'error' ? 'bg-brand-red/10' : 'bg-brand-orange/10'
-                }`}>
-                  {doc.status === 'uploaded' ? (
-                    <Check className="h-4 w-4 text-brand-green" />
-                  ) : doc.status === 'error' ? (
-                    <X className="h-4 w-4 text-brand-red" />
-                  ) : (
-                    <Upload className="h-4 w-4 text-brand-orange animate-pulse" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{doc.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatFileSize(doc.size)} • {doc.status === 'uploading' ? 'Uploading...' : 
-                     doc.status === 'uploaded' ? 'Uploaded successfully' : 'Upload failed'}
-                  </p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => removeDocument(doc.id)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
+      {medicalAidScheme && medicalAidScheme !== 'none' && medicalAidScheme !== '' && (
+        <FileUploadArea
+          type="medical_aid"
+          title="Medical Aid Card"
+          description={`Upload a clear photo of your ${medicalAidScheme} membership card`}
+          uploadedFile={medicalAidCard}
+          color="green"
+        />
       )}
 
-      {/* Upload Guidelines */}
-      <div className="bg-brand-blue/5 p-4 rounded-lg border border-brand-blue/20">
-        <div className="flex items-start gap-3">
-          <div className="bg-brand-blue/10 p-2 rounded-full">
-            <Camera className="h-5 w-5 text-brand-blue" />
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="flex gap-3">
+          <div className="bg-amber-100 p-1 rounded-full">
+            <svg className="h-4 w-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
           </div>
           <div>
-            <h4 className="font-medium text-brand-blue mb-1">Photo Guidelines</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Ensure good lighting and clear image quality</li>
-              <li>• All text should be clearly readable</li>
-              <li>• Avoid shadows, glare, or blurred areas</li>
-              <li>• Accepted formats: JPG, PNG, PDF (max 10MB)</li>
-              <li>• Both sides of ID document if applicable</li>
+            <h4 className="font-medium text-amber-800 text-sm">Document Requirements</h4>
+            <ul className="text-sm text-amber-700 mt-1 space-y-1">
+              <li>• Ensure documents are clear and readable</li>
+              <li>• Accepted formats: JPG, PNG, PDF (max 5MB each)</li>
+              <li>• All personal information must be visible</li>
+              <li>• Documents are securely stored and encrypted</li>
             </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Optional Documents Notice */}
-      <div className="bg-brand-amber/5 p-4 rounded-lg border border-brand-amber/20">
-        <div className="flex items-start gap-3">
-          <div className="bg-brand-amber/10 p-2 rounded-full">
-            <FileText className="h-5 w-5 text-brand-amber" />
-          </div>
-          <div>
-            <h4 className="font-medium text-brand-amber mb-1">Document Verification</h4>
-            <p className="text-sm text-muted-foreground">
-              Documents will be verified by our admin team within 24 hours. 
-              You can still book consultations while verification is pending, 
-              but payment may be required upfront until verification is complete.
-            </p>
           </div>
         </div>
       </div>

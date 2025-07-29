@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, CreditCard, CheckCircle } from 'lucide-react';
+import { CreditCard, CheckCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/loading';
 import { PaymentData, paystackService } from '@/lib/paystack';
 
 declare global {
@@ -277,7 +278,7 @@ export function PaystackPaymentPolling({
     switch (status) {
       case 'processing':
       case 'checking':
-        return <Loader2 className="mr-2 h-4 w-4 animate-spin" />;
+        return <LoadingSpinner size="sm" className="mr-2" />;
       case 'success':
         return <CheckCircle className="mr-2 h-4 w-4 text-green-600" />;
       default:
@@ -300,7 +301,7 @@ export function PaystackPaymentPolling({
           </>
         ) : !scriptLoaded ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <LoadingSpinner size="sm" className="mr-2" />
             Loading...
           </>
         ) : (

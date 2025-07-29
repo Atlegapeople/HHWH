@@ -109,7 +109,7 @@ export default function PortalNavigation({ currentPortal = 'home', className = '
   }
 
   return (
-    <header className={`bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50 ${className}`}>
+    <header className={`bg-white/98 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 ${className}`}>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo and Home Link */}
@@ -247,25 +247,26 @@ export default function PortalNavigation({ currentPortal = 'home', className = '
             )}
 
             {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="lg:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-gray-200 py-4">
+          <div className="lg:hidden border-t border-gray-200 py-4 bg-white">
             <div className="space-y-2">
               {/* Home Link */}
               <Link 
                 href="/" 
                 className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                  currentPortal === 'home' ? 'bg-gray-100 text-gray-900' : 'text-gray-600'
+                  currentPortal === 'home' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -291,13 +292,13 @@ export default function PortalNavigation({ currentPortal = 'home', className = '
                           handlePortalAccess(portal.name.toLowerCase().split(' ')[0] as 'patient' | 'doctor' | 'admin')
                           setMobileMenuOpen(false)
                         }}
-                        className="block px-3 py-1 text-sm text-gray-600 hover:text-gray-900 text-left w-full"
+                        className="block px-3 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded text-left w-full transition-colors"
                       >
                         {portal.name}
                       </button>
                       <Link 
                         href={portal.loginHref}
-                        className="block px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
+                        className="block px-3 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         Sign In / Register
@@ -310,7 +311,7 @@ export default function PortalNavigation({ currentPortal = 'home', className = '
               {/* User Info (Mobile) */}
               {user && (
                 <div className="pt-4 border-t border-gray-200 space-y-2">
-                  <div className="px-3 py-2 bg-gray-50 rounded-lg">
+                  <div className="px-3 py-2 bg-gray-50/80 rounded-lg border border-gray-100">
                     <div className="flex items-center space-x-3 mb-2">
                       <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                         <User className="h-4 w-4 text-gray-600" />
@@ -333,7 +334,7 @@ export default function PortalNavigation({ currentPortal = 'home', className = '
                           else if (userRole === 'admin') router.push('/admin/dashboard')
                           setMobileMenuOpen(false)
                         }}
-                        className="flex items-center space-x-2 w-full text-left px-2 py-1 text-sm text-gray-600 hover:text-gray-900 rounded"
+                        className="flex items-center space-x-2 w-full text-left px-2 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                       >
                         <User className="h-3 w-3" />
                         <span>My Dashboard</span>
@@ -343,7 +344,7 @@ export default function PortalNavigation({ currentPortal = 'home', className = '
                           handleSignOut()
                           setMobileMenuOpen(false)
                         }}
-                        className="flex items-center space-x-2 w-full text-left px-2 py-1 text-sm text-red-600 hover:text-red-700 rounded"
+                        className="flex items-center space-x-2 w-full text-left px-2 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                       >
                         <LogOut className="h-3 w-3" />
                         <span>Sign Out</span>
@@ -367,7 +368,6 @@ export default function PortalNavigation({ currentPortal = 'home', className = '
             </div>
           </div>
         )}
-        </div>
       </div>
     </header>
   )

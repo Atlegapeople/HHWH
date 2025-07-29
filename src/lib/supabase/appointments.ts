@@ -249,32 +249,33 @@ export class AppointmentService {
     return data
   }
 
-  async getDoctorAppointments(doctorId: string, date?: string): Promise<Database['public']['Tables']['appointments']['Row'][]> {
-    let query = this.supabase
-      .from('appointments')
-      .select('*')
-      .eq('doctor_id', doctorId)
+  async getDoctorAppointments(doctorId: string, date?: string): Promise<any[]> {
+    try {
+      // Use API route to fetch appointments with patient data
+      const url = new URL(`/api/appointments/doctor/${doctorId}`, window.location.origin)
+      if (date) {
+        url.searchParams.set('date', date)
+      }
 
-    if (date) {
-      query = query.eq('appointment_date', date)
-    }
+      const response = await fetch(url.toString())
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch appointments')
+      }
 
-    const { data, error } = await query
-      .order('appointment_date', { ascending: false })
-      .order('appointment_time', { ascending: true })
+      const data = await response.json()
+      return data
 
-    if (error) {
+    } catch (error) {
       console.error('Error fetching doctor appointments:', error)
       throw error
     }
-
-    return data || []
   }
 
   async updateAppointmentStatus(id: string, status: string): Promise<Database['public']['Tables']['appointments']['Row']> {
     const { data, error } = await this.supabase
       .from('appointments')
-      .update({ appointment_status: status })
+      .update({ status: status })
       .eq('id', id)
       .select()
       .single()

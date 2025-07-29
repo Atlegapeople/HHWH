@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!['approve', 'reject'].includes(action)) {
+    if (!['approve', 'reject', 'disable'].includes(action)) {
       return NextResponse.json(
-        { error: 'Action must be either "approve" or "reject"' },
+        { error: 'Action must be either "approve", "reject", or "disable"' },
         { status: 400 }
       )
     }
@@ -104,6 +104,41 @@ export async function POST(request: NextRequest) {
         message: 'Doctor application rejected',
         doctor: updatedDoctor
       })
+      
+    } else if (action === 'disable') {
+      // Disable an active doctor
+      console.log(`Attempting to disable doctor with ID: ${doctorId}`)
+      const { data: updatedDoctor, error: updateError } = await supabaseAdmin
+        .from('doctors')
+        .update({ 
+          is_active: false
+        })
+        .eq('id', doctorId)
+        .select()
+        .single()
+
+      if (updateError) {
+        console.error('Doctor disable failed:', updateError)
+        console.error('Update error details:', updateError.details)
+        console.error('Update error hint:', updateError.hint)
+        return NextResponse.json(
+          { 
+            error: 'Failed to disable doctor', 
+            details: updateError.message,
+            supabaseError: updateError
+          },
+          { status: 400 }
+        )
+      }
+
+      // TODO: Send notification email to doctor
+      console.log(`Doctor ${doctor.full_name} disabled`)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Doctor disabled successfully',
+        doctor: updatedDoctor
+      })
     }
 
   } catch (error) {
@@ -158,6 +193,62 @@ export async function GET(request: NextRequest) {
     console.error('Fetch doctors error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// Delete doctor
+export async function DELETE(request: NextRequest) {
+  try {
+    const { doctorId } = await request.json()
+
+    if (!doctorId) {
+      return NextResponse.json(
+        { error: 'Doctor ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Get doctor details first
+    const { data: doctor, error: fetchError } = await supabaseAdmin
+      .from('doctors')
+      .select('*')
+      .eq('id', doctorId)
+      .single()
+
+    if (fetchError || !doctor) {
+      return NextResponse.json(
+        { error: 'Doctor not found' },
+        { status: 404 }
+      )
+    }
+
+    // Delete the doctor record
+    const { error: deleteError } = await supabaseAdmin
+      .from('doctors')
+      .delete()
+      .eq('id', doctorId)
+
+    if (deleteError) {
+      console.error('Doctor deletion failed:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to delete doctor', details: deleteError.message },
+        { status: 400 }
+      )
+    }
+
+    console.log(`Doctor ${doctor.full_name} deleted permanently`)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Doctor deleted successfully'
+    })
+
+  } catch (error) {
+    console.error('Doctor deletion error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

@@ -5,6 +5,7 @@ import { PatientRegistration } from '@/lib/validations/patient'
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { User, Mail, Phone, Calendar } from 'lucide-react'
+import { ProfilePhotoUpload } from '@/components/forms/ProfilePhotoUpload'
 
 interface PersonalInfoStepProps {
   form: UseFormReturn<PatientRegistration>
@@ -16,13 +17,27 @@ export function PersonalInfoStep({ form }: PersonalInfoStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <div className="mx-auto bg-brand-orange/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-          <User className="h-8 w-8 text-brand-orange" />
-        </div>
         <h3 className="text-lg font-heading font-semibold mb-2">Tell us about yourself</h3>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mb-6">
           Please provide your basic information to help us create your patient profile.
         </p>
+        
+        <FormField
+          control={control}
+          name="profile_photo_url"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <ProfilePhotoUpload
+                  currentPhotoUrl={field.value}
+                  onPhotoChange={field.onChange}
+                  size="lg"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

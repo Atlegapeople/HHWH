@@ -125,6 +125,7 @@ export type Database = {
           phone: string
           date_of_birth: string
           gender: string
+          profile_photo_url: string | null
           address_line_1: string
           address_line_2: string | null
           city: string
@@ -145,6 +146,7 @@ export type Database = {
           phone: string
           date_of_birth: string
           gender: string
+          profile_photo_url?: string | null
           address_line_1: string
           address_line_2?: string | null
           city: string
@@ -165,6 +167,7 @@ export type Database = {
           phone?: string
           date_of_birth?: string
           gender?: string
+          profile_photo_url?: string | null
           address_line_1?: string
           address_line_2?: string | null
           city?: string

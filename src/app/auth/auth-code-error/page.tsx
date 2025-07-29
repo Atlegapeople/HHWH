@@ -34,7 +34,7 @@ export default function AuthCodeErrorPage() {
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
                 The authentication link appears to be invalid or has expired. 
-                This can happen if you've already used the link or if too much time has passed.
+                This can happen if you&apos;ve already used the link or if too much time has passed.
               </p>
             </div>
             

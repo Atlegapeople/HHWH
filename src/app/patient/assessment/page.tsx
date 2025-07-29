@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -16,7 +17,8 @@ import { Label } from '@/components/ui/label'
 import { ArrowLeft, ArrowRight, FileText, CheckCircle, Thermometer, Moon, Brain, Heart, Activity } from 'lucide-react'
 import Link from 'next/link'
 import { SymptomAssessment, symptomAssessmentSchema } from '@/lib/validations/patient'
-import { createAssessment, calculateAssessmentScores, formatAssessmentDate } from '@/lib/supabase/assessments'
+import { createAssessment, calculateAssessmentScores, formatAssessmentDate, getAssessmentById } from '@/lib/supabase/assessments'
+import { getCurrentUserPatient } from '@/lib/supabase/patients'
 import { useAuth } from '@/contexts/AuthContext'
 
 const ASSESSMENT_STEPS = [
@@ -44,14 +46,33 @@ const frequencyOptions = [
   { value: '4', label: 'Very Often', description: 'More than 10 times per day' }
 ]
 
-export default function SymptomAssessmentPage() {
+function SymptomAssessmentContent() {
   const { user, loading: authLoading } = useAuth()
+  const searchParams = useSearchParams()
   const [currentStep, setCurrentStep] = useState(1)
   const [patientEmail, setPatientEmail] = useState('')
   const [showEmailInput, setShowEmailInput] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
   const [assessmentResult, setAssessmentResult] = useState<any>(null)
+  const [patientData, setPatientData] = useState<any>(null)
+  const [calculatedAge, setCalculatedAge] = useState<number | null>(null)
+  const [isViewingResults, setIsViewingResults] = useState(false)
+  const [loadingResults, setLoadingResults] = useState(false)
+
+  // Function to calculate age from date of birth
+  const calculateAge = (dateOfBirth: string): number => {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  }
 
   const form = useForm<SymptomAssessment>({
     resolver: zodResolver(symptomAssessmentSchema),
@@ -130,6 +151,67 @@ export default function SymptomAssessmentPage() {
     }
   }, [user, authLoading])
 
+  // Load patient data and calculate age from date of birth
+  useEffect(() => {
+    const loadPatientData = async () => {
+      if (!authLoading && user) {
+        try {
+          const patient = await getCurrentUserPatient()
+          if (patient) {
+            setPatientData(patient)
+            console.log('Patient data loaded:', patient)
+            
+            // Calculate age from date of birth if available
+            if (patient.date_of_birth) {
+              const age = calculateAge(patient.date_of_birth)
+              setCalculatedAge(age)
+              console.log('Calculated age:', age, 'from date of birth:', patient.date_of_birth)
+              
+              // Set the age in the form
+              form.setValue('age', age)
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load patient data:', error)
+        }
+      }
+    }
+
+    loadPatientData()
+  }, [user, authLoading, form])
+
+  // Check for results view mode from URL params
+  useEffect(() => {
+    const view = searchParams.get('view')
+    const id = searchParams.get('id')
+    
+    if (view === 'results' && id) {
+      console.log('Loading assessment results for ID:', id)
+      setIsViewingResults(true)
+      setLoadingResults(true)
+      
+      // Load the specific assessment data
+      const loadAssessmentResults = async () => {
+        try {
+          const assessmentData = await getAssessmentById(id)
+          if (assessmentData) {
+            console.log('Assessment data loaded:', assessmentData)
+            setAssessmentResult(assessmentData)
+            setIsCompleted(true) // Show results view
+          } else {
+            console.error('Assessment not found')
+          }
+        } catch (error) {
+          console.error('Failed to load assessment:', error)
+        } finally {
+          setLoadingResults(false)
+        }
+      }
+      
+      loadAssessmentResults()
+    }
+  }, [searchParams])
+
   const nextStep = async () => {
     let isValid = true
     
@@ -200,7 +282,7 @@ export default function SymptomAssessmentPage() {
   // Loading state for authentication
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-brand-pink/30 via-white to-brand-blue-light/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-brand-pink/20 via-white to-brand-green-light/20 flex items-center justify-center">
         <Card className="w-full max-w-md text-center">
           <CardContent className="p-6">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-green mx-auto mb-4"></div>
@@ -214,12 +296,12 @@ export default function SymptomAssessmentPage() {
   // Email input screen
   if (showEmailInput) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-brand-pink/30 via-white to-brand-blue-light/20">
+      <div className="min-h-screen bg-gradient-to-br from-brand-pink/10 via-white to-brand-blue-light/15">
         <header className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <Link href="/patient" className="flex items-center space-x-2">
+            <Link href="/patient/dashboard" className="flex items-center space-x-2">
               <ArrowLeft className="h-5 w-5" />
-              <span className="font-medium">Back to Patient Portal</span>
+              <span className="font-medium">Back to Dashboard</span>
             </Link>
             <Badge variant="outline" className="text-brand-purple">
               Symptom Assessment
@@ -318,7 +400,7 @@ export default function SymptomAssessmentPage() {
     const { scores, severity_level, total_score, recommendations } = assessmentResult
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-brand-pink/30 via-white to-brand-blue-light/20 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-brand-pink/15 via-white to-brand-green-light/15 flex items-center justify-center p-4">
         <Card className="w-full max-w-4xl">
           <CardHeader className="text-center">
             <div className="mx-auto bg-brand-green/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
@@ -443,46 +525,49 @@ export default function SymptomAssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-pink/30 via-white to-brand-blue-light/20">
+    <div className="min-h-screen bg-gradient-to-br from-brand-pink/10 via-white to-brand-blue-light/15">
       {/* Header */}
-      <header className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between">
-          <Link href="/patient" className="flex items-center space-x-2">
-            <ArrowLeft className="h-5 w-5" />
-            <span className="font-medium">Back to Patient Portal</span>
-          </Link>
-          <Badge variant="outline" className="text-brand-purple">
-            Assessment - Step {currentStep} of {ASSESSMENT_STEPS.length}
-          </Badge>
+      <header className="border-b border-brand-gray/20 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-0 z-50">
+        <div className="container mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <Link href="/patient/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Link>
+            <Badge variant="secondary" className="px-3 py-1.5 text-sm font-medium bg-brand-purple/10 text-brand-purple border-brand-purple/30">
+              Assessment - Step {currentStep} of {ASSESSMENT_STEPS.length}
+            </Badge>
+          </div>
         </div>
       </header>
 
       {/* Progress Bar */}
-      <div className="container mx-auto px-4 mb-8">
-        <div className="bg-white/50 backdrop-blur-sm rounded-lg p-6 border">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-heading font-bold">Hormone Health Assessment</h1>
-            <span className="text-sm text-muted-foreground">
-              {Math.round(progressPercentage)}% Complete
-            </span>
+      <div className="container mx-auto px-6 py-8">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-8 border border-brand-gray/20 shadow-lg">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-heading font-bold text-foreground">Hormone Health Assessment</h1>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-brand-green">{Math.round(progressPercentage)}%</div>
+              <div className="text-sm text-muted-foreground">Complete</div>
+            </div>
           </div>
-          <Progress value={progressPercentage} className="mb-4" />
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs">
+          <Progress value={progressPercentage} className="mb-6 h-3" />
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-xs">
             {ASSESSMENT_STEPS.map((step) => {
               const IconComponent = step.icon
               return (
                 <div
                   key={step.id}
-                  className={`text-center p-2 rounded flex flex-col items-center gap-1 ${
+                  className={`text-center p-3 rounded-lg flex flex-col items-center gap-2 transition-all duration-200 ${
                     step.id === currentStep
-                      ? 'bg-brand-green text-white'
+                      ? 'bg-brand-green text-white shadow-md scale-105'
                       : step.id < currentStep
-                      ? 'bg-brand-green/20 text-brand-green'
-                      : 'bg-gray-100 text-gray-500'
+                      ? 'bg-brand-green/15 text-brand-green border border-brand-green/30'
+                      : 'bg-brand-gray/10 text-brand-gray border border-brand-gray/20'
                   }`}
                 >
-                  <IconComponent className="h-4 w-4" />
-                  <div className="font-medium hidden md:block">{step.title}</div>
+                  <IconComponent className="h-5 w-5" />
+                  <div className="font-medium text-xs hidden md:block leading-tight">{step.title}</div>
                 </div>
               )
             })}
@@ -491,18 +576,18 @@ export default function SymptomAssessmentPage() {
       </div>
 
       {/* Assessment Form */}
-      <div className="container mx-auto px-4 pb-8">
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle className="font-heading text-xl flex items-center gap-2">
-              {React.createElement(ASSESSMENT_STEPS[currentStep - 1].icon, { className: "h-5 w-5 text-brand-green" })}
+      <div className="container mx-auto px-6 pb-12">
+        <Card className="max-w-4xl mx-auto border border-brand-gray/20 shadow-xl">
+          <CardHeader className="pb-6">
+            <CardTitle className="font-heading text-2xl flex items-center gap-3 text-foreground">
+              {React.createElement(ASSESSMENT_STEPS[currentStep - 1].icon, { className: "h-6 w-6 text-brand-green" })}
               {ASSESSMENT_STEPS[currentStep - 1].title}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-base mt-2">
               {ASSESSMENT_STEPS[currentStep - 1].description}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <Form {...form}>
               <form onSubmit={handleSubmit(onSubmit)}>
                 {/* Step 1: Vasomotor Symptoms */}
@@ -517,29 +602,32 @@ export default function SymptomAssessmentPage() {
 
                     <div className="grid md:grid-cols-2 gap-6">
                       {/* Hot Flashes */}
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-brand-red">Hot Flashes</h4>
+                      <div className="space-y-6">
+                        <h4 className="font-semibold text-lg text-brand-red flex items-center gap-2">
+                          <Thermometer className="h-5 w-5" />
+                          Hot Flashes
+                        </h4>
                         
                         <FormField
                           control={form.control}
                           name="hot_flashes_frequency"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>How often do you experience hot flashes?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">How often do you experience hot flashes?</FormLabel>
                               <FormControl>
                                 <RadioGroup
                                   onValueChange={field.onChange}
                                   defaultValue={field.value}
-                                  className="space-y-2"
+                                  className="space-y-3"
                                 >
                                   {frequencyOptions.slice(0, 5).map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`hf_freq_${option.value}`} />
-                                      <Label htmlFor={`hf_freq_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-red/30 hover:bg-brand-red/5 transition-all cursor-pointer">
+                                      <RadioGroupItem value={option.value} id={`hf_freq_${option.value}`} className="mt-1" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`hf_freq_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">
                                           {option.description}
-                                        </span>
+                                        </div>
                                       </Label>
                                     </div>
                                   ))}
@@ -554,8 +642,8 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="hot_flashes_severity"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>How severe are your hot flashes when they occur?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">How severe are your hot flashes when they occur?</FormLabel>
                               <FormControl>
                                 <RadioGroup
                                   onValueChange={field.onChange}
@@ -563,13 +651,13 @@ export default function SymptomAssessmentPage() {
                                   className="space-y-2"
                                 >
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`hf_sev_${option.value}`} />
-                                      <Label htmlFor={`hf_sev_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`hf_sev_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`hf_sev_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">
                                           {option.description}
-                                        </span>
+                                        </div>
                                       </Label>
                                     </div>
                                   ))}
@@ -582,29 +670,32 @@ export default function SymptomAssessmentPage() {
                       </div>
 
                       {/* Night Sweats */}
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-brand-blue">Night Sweats</h4>
+                      <div className="space-y-6">
+                        <h4 className="font-semibold text-lg text-brand-blue flex items-center gap-2">
+                          <Moon className="h-5 w-5" />
+                          Night Sweats
+                        </h4>
                         
                         <FormField
                           control={form.control}
                           name="night_sweats_frequency"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>How often do you experience night sweats?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">How often do you experience night sweats?</FormLabel>
                               <FormControl>
                                 <RadioGroup
                                   onValueChange={field.onChange}
                                   defaultValue={field.value}
-                                  className="space-y-2"
+                                  className="space-y-3"
                                 >
                                   {frequencyOptions.slice(0, 5).map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`ns_freq_${option.value}`} />
-                                      <Label htmlFor={`ns_freq_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem value={option.value} id={`ns_freq_${option.value}`} className="mt-1" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`ns_freq_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">
                                           {option.description}
-                                        </span>
+                                        </div>
                                       </Label>
                                     </div>
                                   ))}
@@ -619,22 +710,22 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="night_sweats_severity"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>How severe are your night sweats when they occur?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">How severe are your night sweats when they occur?</FormLabel>
                               <FormControl>
                                 <RadioGroup
                                   onValueChange={field.onChange}
                                   defaultValue={field.value}
-                                  className="space-y-2"
+                                  className="space-y-3"
                                 >
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`ns_sev_${option.value}`} />
-                                      <Label htmlFor={`ns_sev_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem value={option.value} id={`ns_sev_${option.value}`} className="mt-1" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`ns_sev_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">
                                           {option.description}
-                                        </span>
+                                        </div>
                                       </Label>
                                     </div>
                                   ))}
@@ -651,50 +742,53 @@ export default function SymptomAssessmentPage() {
 
                 {/* Step 2: Sleep & Mood Symptoms */}
                 {currentStep === 2 && (
-                  <div className="space-y-6">
-                    <div className="bg-brand-blue/5 border border-brand-blue/20 rounded-lg p-4 mb-6">
-                      <h3 className="font-semibold mb-2">Sleep Quality & Emotional Wellbeing</h3>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="space-y-8">
+                    <div className="bg-brand-blue/5 border border-brand-blue/20 rounded-xl p-6 shadow-sm">
+                      <h3 className="font-semibold mb-3 text-brand-blue">Sleep Quality & Emotional Wellbeing</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         Hormonal changes significantly affect sleep patterns and emotional regulation. These questions help assess the impact on your daily functioning.
                       </p>
                     </div>
 
-                    <div className="grid gap-6">
+                    <div className="grid gap-8">
                       {/* Sleep Quality Section */}
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-brand-blue border-b pb-2">Sleep Assessment</h4>
+                      <div className="space-y-6">
+                        <h4 className="font-semibold text-lg text-brand-blue flex items-center gap-2">
+                          <Moon className="h-5 w-5" />
+                          Sleep Assessment
+                        </h4>
                         
                         <FormField
                           control={form.control}
                           name="sleep_quality"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Overall, how would you rate your sleep quality over the past month?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Overall, how would you rate your sleep quality over the past month?</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="0" id="sleep_0" />
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="0" id="sleep_0" />
                                     <Label htmlFor="sleep_0" className="flex-1">
                                       <span className="font-medium">Excellent</span>
                                       <span className="text-sm text-muted-foreground ml-2">Sleep is very satisfying, feel well-rested</span>
                                     </Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="1" id="sleep_1" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="1" id="sleep_1" />
                                     <Label htmlFor="sleep_1" className="flex-1">
                                       <span className="font-medium">Good</span>
                                       <span className="text-sm text-muted-foreground ml-2">Generally sleep well, occasional issues</span>
                                     </Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="2" id="sleep_2" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="2" id="sleep_2" />
                                     <Label htmlFor="sleep_2" className="flex-1">
                                       <span className="font-medium">Poor</span>
                                       <span className="text-sm text-muted-foreground ml-2">Frequently disrupted, feel tired during day</span>
                                     </Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="3" id="sleep_3" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="3" id="sleep_3" />
                                     <Label htmlFor="sleep_3" className="flex-1">
                                       <span className="font-medium">Very Poor</span>
                                       <span className="text-sm text-muted-foreground ml-2">Severely disrupted, significantly impacts daily function</span>
@@ -711,21 +805,21 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="sleep_onset_difficulty"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>How often do you have trouble falling asleep within 30 minutes?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">How often do you have trouble falling asleep within 30 minutes?</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {[
                                     { value: '0', label: 'Never', desc: 'Fall asleep easily most nights' },
                                     { value: '1', label: 'Sometimes', desc: '1-2 nights per week' },
                                     { value: '2', label: 'Often', desc: '3-4 nights per week' },
                                     { value: '3', label: 'Always', desc: '5+ nights per week' }
                                   ].map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`sleep_onset_${option.value}`} />
-                                      <Label htmlFor={`sleep_onset_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.desc}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`sleep_onset_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`sleep_onset_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.desc}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -740,16 +834,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="early_morning_wakening"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>How often do you wake up earlier than planned and can't get back to sleep?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">How often do you wake up earlier than planned and can't get back to sleep?</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`wake_${option.value}`} />
-                                      <Label htmlFor={`wake_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`wake_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`wake_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -763,22 +857,25 @@ export default function SymptomAssessmentPage() {
 
                       {/* Mood & Emotional Symptoms */}
                       <div className="space-y-4">
-                        <h4 className="font-semibold text-brand-purple border-b pb-2">Emotional & Psychological Symptoms</h4>
+                        <h4 className="font-semibold text-lg text-brand-purple flex items-center gap-2">
+                          <Brain className="h-5 w-5" />
+                          Emotional & Psychological Symptoms
+                        </h4>
                         
                         <FormField
                           control={form.control}
                           name="mood_swings"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Mood swings or emotional ups and downs</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Mood swings or emotional ups and downs</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`mood_${option.value}`} />
-                                      <Label htmlFor={`mood_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`mood_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`mood_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -793,16 +890,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="irritability"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Irritability or feeling easily annoyed</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Irritability or feeling easily annoyed</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`irritability_${option.value}`} />
-                                      <Label htmlFor={`irritability_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`irritability_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`irritability_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -817,16 +914,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="anxiety"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Anxiety, nervousness, or feeling tense</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Anxiety, nervousness, or feeling tense</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`anxiety_${option.value}`} />
-                                      <Label htmlFor={`anxiety_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`anxiety_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`anxiety_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -841,16 +938,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="depression"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Feeling sad, down, or depressed</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Feeling sad, down, or depressed</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`depression_${option.value}`} />
-                                      <Label htmlFor={`depression_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={"depression-" + option.value} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={"depression-" + option.value}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -884,16 +981,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="concentration_difficulty"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Difficulty concentrating or focusing on tasks</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Difficulty concentrating or focusing on tasks</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`concentration_${option.value}`} />
-                                      <Label htmlFor={`concentration_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={"concentration-" + option.value} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={"concentration-" + option.value}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -908,16 +1005,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="memory_problems"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Memory problems (forgetting names, appointments, where you put things)</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Memory problems (forgetting names, appointments, where you put things)</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`memory_${option.value}`} />
-                                      <Label htmlFor={`memory_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`memory_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`memory_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -932,16 +1029,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="mental_fatigue"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Mental fatigue or "brain fog" - feeling mentally sluggish</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Mental fatigue or "brain fog" - feeling mentally sluggish</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`mental_fatigue_${option.value}`} />
-                                      <Label htmlFor={`mental_fatigue_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`mental_fatigue_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`mental_fatigue_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -962,14 +1059,14 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="fatigue"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Physical fatigue or lack of energy</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Physical fatigue or lack of energy</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                     {severityOptions.map((option) => (
-                                      <div key={option.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.value} id={`fatigue_${option.value}`} />
-                                        <Label htmlFor={`fatigue_${option.value}`} className="text-sm">
+                                      <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                        <RadioGroupItem className="mt-1" value={option.value} id={`fatigue_${option.value}`} />
+                                        <Label className="flex-1 cursor-pointer" htmlFor={`fatigue_${option.value}`}>
                                           {option.label}
                                         </Label>
                                       </div>
@@ -985,14 +1082,14 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="joint_aches"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Joint aches and pains</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Joint aches and pains</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                     {severityOptions.map((option) => (
-                                      <div key={option.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.value} id={`joint_${option.value}`} />
-                                        <Label htmlFor={`joint_${option.value}`} className="text-sm">
+                                      <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                        <RadioGroupItem className="mt-1" value={option.value} id={`joint_${option.value}`} />
+                                        <Label className="flex-1 cursor-pointer" htmlFor={`joint_${option.value}`}>
                                           {option.label}
                                         </Label>
                                       </div>
@@ -1008,14 +1105,14 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="muscle_tension"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Muscle tension or stiffness</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Muscle tension or stiffness</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                     {severityOptions.map((option) => (
-                                      <div key={option.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.value} id={`muscle_${option.value}`} />
-                                        <Label htmlFor={`muscle_${option.value}`} className="text-sm">
+                                      <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                        <RadioGroupItem className="mt-1" value={option.value} id={`muscle_${option.value}`} />
+                                        <Label className="flex-1 cursor-pointer" htmlFor={`muscle_${option.value}`}>
                                           {option.label}
                                         </Label>
                                       </div>
@@ -1031,14 +1128,14 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="headaches"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Headaches (frequency or severity changes)</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Headaches (frequency or severity changes)</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                     {severityOptions.map((option) => (
-                                      <div key={option.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.value} id={`headaches_${option.value}`} />
-                                        <Label htmlFor={`headaches_${option.value}`} className="text-sm">
+                                      <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                        <RadioGroupItem className="mt-1" value={option.value} id={`headaches_${option.value}`} />
+                                        <Label className="flex-1 cursor-pointer" htmlFor={`headaches_${option.value}`}>
                                           {option.label}
                                         </Label>
                                       </div>
@@ -1054,14 +1151,14 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="breast_tenderness"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Breast tenderness or sensitivity</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Breast tenderness or sensitivity</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                     {severityOptions.map((option) => (
-                                      <div key={option.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.value} id={`breast_${option.value}`} />
-                                        <Label htmlFor={`breast_${option.value}`} className="text-sm">
+                                      <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                        <RadioGroupItem className="mt-1" value={option.value} id={`breast_${option.value}`} />
+                                        <Label className="flex-1 cursor-pointer" htmlFor={`breast_${option.value}`}>
                                           {option.label}
                                         </Label>
                                       </div>
@@ -1077,14 +1174,14 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="weight_gain"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Weight gain or difficulty losing weight</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Weight gain or difficulty losing weight</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                     {severityOptions.map((option) => (
-                                      <div key={option.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.value} id={`weight_${option.value}`} />
-                                        <Label htmlFor={`weight_${option.value}`} className="text-sm">
+                                      <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                        <RadioGroupItem className="mt-1" value={option.value} id={`weight_${option.value}`} />
+                                        <Label className="flex-1 cursor-pointer" htmlFor={`weight_${option.value}`}>
                                           {option.label}
                                         </Label>
                                       </div>
@@ -1100,14 +1197,14 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="bloating"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Bloating or abdominal discomfort</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Bloating or abdominal discomfort</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                     {severityOptions.map((option) => (
-                                      <div key={option.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.value} id={`bloating_${option.value}`} />
-                                        <Label htmlFor={`bloating_${option.value}`} className="text-sm">
+                                      <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                        <RadioGroupItem className="mt-1" value={option.value} id={`bloating_${option.value}`} />
+                                        <Label className="flex-1 cursor-pointer" htmlFor={`bloating_${option.value}`}>
                                           {option.label}
                                         </Label>
                                       </div>
@@ -1143,16 +1240,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="decreased_libido"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Decreased interest in sex or sexual activity</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Decreased interest in sex or sexual activity</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`libido_${option.value}`} />
-                                      <Label htmlFor={`libido_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`libido_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`libido_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -1167,16 +1264,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="vaginal_dryness"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Vaginal dryness or lack of natural lubrication</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Vaginal dryness or lack of natural lubrication</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`dryness_${option.value}`} />
-                                      <Label htmlFor={`dryness_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`dryness_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`dryness_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -1191,16 +1288,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="painful_intercourse"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Pain or discomfort during sexual intercourse</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Pain or discomfort during sexual intercourse</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`pain_${option.value}`} />
-                                      <Label htmlFor={`pain_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`pain_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`pain_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -1220,16 +1317,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="urinary_urgency"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Sudden, strong urges to urinate that are difficult to control</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Sudden, strong urges to urinate that are difficult to control</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`urgency_${option.value}`} />
-                                      <Label htmlFor={`urgency_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`urgency_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`urgency_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -1244,16 +1341,16 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="urinary_frequency"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Needing to urinate more frequently than usual, including at night</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Needing to urinate more frequently than usual, including at night</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                   {severityOptions.map((option) => (
-                                    <div key={option.value} className="flex items-center space-x-2">
-                                      <RadioGroupItem value={option.value} id={`frequency_${option.value}`} />
-                                      <Label htmlFor={`frequency_${option.value}`} className="flex-1">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                    <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value={option.value} id={`frequency_${option.value}`} />
+                                      <Label className="flex-1 cursor-pointer" htmlFor={`frequency_${option.value}`}>
+                                        <div className="font-medium text-foreground">{option.label}</div>
+                                        <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                       </Label>
                                     </div>
                                   ))}
@@ -1273,28 +1370,28 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="menstrual_status"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>What best describes your current menstrual status?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">What best describes your current menstrual status?</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="regular" id="regular" />
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="regular" id="regular" />
                                     <Label htmlFor="regular">Regular periods (cycles 21-35 days apart)</Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="irregular" id="irregular" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="irregular" id="irregular" />
                                     <Label htmlFor="irregular">Irregular periods (unpredictable timing or flow)</Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="stopped_less_than_1_year" id="stopped_recent" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="stopped_less_than_1_year" id="stopped_recent" />
                                     <Label htmlFor="stopped_recent">Periods stopped less than 1 year ago</Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="stopped_more_than_1_year" id="stopped_over_year" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="stopped_more_than_1_year" id="stopped_over_year" />
                                     <Label htmlFor="stopped_over_year">Periods stopped more than 1 year ago</Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="hysterectomy" id="hysterectomy" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="hysterectomy" id="hysterectomy" />
                                     <Label htmlFor="hysterectomy">Have had hysterectomy</Label>
                                   </div>
                                 </RadioGroup>
@@ -1308,8 +1405,8 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="last_menstrual_period"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>When was your last menstrual period? (approximate date)</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">When was your last menstrual period? (approximate date)</FormLabel>
                               <FormControl>
                                 <input
                                   type="month"
@@ -1326,24 +1423,24 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="menstrual_flow_changes"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Have you noticed changes in your menstrual flow over the past year?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Have you noticed changes in your menstrual flow over the past year?</FormLabel>
                               <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="0" id="flow_0" />
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="0" id="flow_0" />
                                     <Label htmlFor="flow_0">No change in flow</Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="1" id="flow_1" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="1" id="flow_1" />
                                     <Label htmlFor="flow_1">Flow became lighter</Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="2" id="flow_2" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="2" id="flow_2" />
                                     <Label htmlFor="flow_2">Flow became heavier</Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="3" id="flow_3" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="3" id="flow_3" />
                                     <Label htmlFor="flow_3">Flow became very irregular (unpredictable)</Label>
                                   </div>
                                 </RadioGroup>
@@ -1376,17 +1473,29 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="age"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Your current age</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Your current age</FormLabel>
                               <FormControl>
-                                <input
-                                  type="number"
-                                  min="18"
-                                  max="100"
-                                  className="flex h-10 w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                                />
+                                {calculatedAge !== null ? (
+                                  <div className="flex items-center space-x-3">
+                                    <div className="flex h-10 w-32 rounded-md border border-input bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700">
+                                      {calculatedAge} years
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">
+                                      (calculated from your date of birth)
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <input
+                                    type="number"
+                                    min="18"
+                                    max="100"
+                                    placeholder="Enter your age"
+                                    className="flex h-10 w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    {...field}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                  />
+                                )}
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -1440,8 +1549,8 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="hrt_type"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>If yes, what type of hormone therapy? (current or most recent)</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">If yes, what type of hormone therapy? (current or most recent)</FormLabel>
                               <FormControl>
                                 <Textarea
                                   placeholder="e.g., Estradiol patches, Progesterone capsules, Combined HRT tablets, etc."
@@ -1552,29 +1661,29 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="smoking_status"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Smoking status</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Smoking status</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="never" id="smoke_never" />
-                                      <Label htmlFor="smoke_never">Never smoked</Label>
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="never" id="smoke_never" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="smoke_never">Never smoked</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="former" id="smoke_former" />
-                                      <Label htmlFor="smoke_former">Former smoker (quit)</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="former" id="smoke_former" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="smoke_former">Former smoker (quit)</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="current_light" id="smoke_light" />
-                                      <Label htmlFor="smoke_light">Current smoker (1-10 per day)</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="current_light" id="smoke_light" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="smoke_light">Current smoker (1-10 per day)</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="current_moderate" id="smoke_moderate" />
-                                      <Label htmlFor="smoke_moderate">Current smoker (11-20 per day)</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="current_moderate" id="smoke_moderate" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="smoke_moderate">Current smoker (11-20 per day)</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="current_heavy" id="smoke_heavy" />
-                                      <Label htmlFor="smoke_heavy">Current smoker (20+ per day)</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="current_heavy" id="smoke_heavy" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="smoke_heavy">Current smoker (20+ per day)</Label>
                                     </div>
                                   </RadioGroup>
                                 </FormControl>
@@ -1587,29 +1696,29 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="alcohol_frequency"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Alcohol consumption</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Alcohol consumption</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="never" id="alcohol_never" />
-                                      <Label htmlFor="alcohol_never">Never or rarely</Label>
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="never" id="alcohol_never" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="alcohol_never">Never or rarely</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="rarely" id="alcohol_rarely" />
-                                      <Label htmlFor="alcohol_rarely">1-2 drinks per month</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="rarely" id="alcohol_rarely" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="alcohol_rarely">1-2 drinks per month</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="weekly" id="alcohol_weekly" />
-                                      <Label htmlFor="alcohol_weekly">1-7 drinks per week</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="weekly" id="alcohol_weekly" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="alcohol_weekly">1-7 drinks per week</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="daily" id="alcohol_daily" />
-                                      <Label htmlFor="alcohol_daily">1-2 drinks daily</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="daily" id="alcohol_daily" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="alcohol_daily">1-2 drinks daily</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="multiple_daily" id="alcohol_multiple" />
-                                      <Label htmlFor="alcohol_multiple">3+ drinks daily</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="multiple_daily" id="alcohol_multiple" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="alcohol_multiple">3+ drinks daily</Label>
                                     </div>
                                   </RadioGroup>
                                 </FormControl>
@@ -1622,29 +1731,29 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="exercise_frequency"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Exercise frequency</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Exercise frequency</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="none" id="exercise_none" />
-                                      <Label htmlFor="exercise_none">No regular exercise</Label>
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="none" id="exercise_none" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="exercise_none">No regular exercise</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="rarely" id="exercise_rarely" />
-                                      <Label htmlFor="exercise_rarely">Rarely (less than weekly)</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="rarely" id="exercise_rarely" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="exercise_rarely">Rarely (less than weekly)</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="1-2_weekly" id="exercise_12" />
-                                      <Label htmlFor="exercise_12">1-2 times per week</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="1-2_weekly" id="exercise_12" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="exercise_12">1-2 times per week</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="3-4_weekly" id="exercise_34" />
-                                      <Label htmlFor="exercise_34">3-4 times per week</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="3-4_weekly" id="exercise_34" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="exercise_34">3-4 times per week</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="5+_weekly" id="exercise_5plus" />
-                                      <Label htmlFor="exercise_5plus">5+ times per week</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="5+_weekly" id="exercise_5plus" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="exercise_5plus">5+ times per week</Label>
                                     </div>
                                   </RadioGroup>
                                 </FormControl>
@@ -1657,21 +1766,21 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="exercise_intensity"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Exercise intensity (when you do exercise)</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Exercise intensity (when you do exercise)</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="light" id="intensity_light" />
-                                      <Label htmlFor="intensity_light">Light (walking, gentle yoga)</Label>
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="light" id="intensity_light" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="intensity_light">Light (walking, gentle yoga)</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="moderate" id="intensity_moderate" />
-                                      <Label htmlFor="intensity_moderate">Moderate (brisk walking, swimming)</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="moderate" id="intensity_moderate" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="intensity_moderate">Moderate (brisk walking, swimming)</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="vigorous" id="intensity_vigorous" />
-                                      <Label htmlFor="intensity_vigorous">Vigorous (running, intense fitness)</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="vigorous" id="intensity_vigorous" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="intensity_vigorous">Vigorous (running, intense fitness)</Label>
                                     </div>
                                   </RadioGroup>
                                 </FormControl>
@@ -1685,24 +1794,24 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="stress_level"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>How would you rate your current stress level?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">How would you rate your current stress level?</FormLabel>
                               <FormControl>
                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="low" id="stress_low" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="low" id="stress_low" />
                                     <Label htmlFor="stress_low">Low</Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="moderate" id="stress_moderate" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="moderate" id="stress_moderate" />
                                     <Label htmlFor="stress_moderate">Moderate</Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="high" id="stress_high" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="high" id="stress_high" />
                                     <Label htmlFor="stress_high">High</Label>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="very_high" id="stress_very_high" />
+                                  <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                    <RadioGroupItem className="mt-1" value="very_high" id="stress_very_high" />
                                     <Label htmlFor="stress_very_high">Very High</Label>
                                   </div>
                                 </RadioGroup>
@@ -1722,8 +1831,8 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="current_medications"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Current prescription medications</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Current prescription medications</FormLabel>
                                 <FormControl>
                                   <Textarea
                                     placeholder="List all prescription medications with dosages (e.g., Metformin 500mg twice daily)"
@@ -1740,8 +1849,8 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="vitamins_supplements"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Vitamins and supplements</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Vitamins and supplements</FormLabel>
                                 <FormControl>
                                   <Textarea
                                     placeholder="List vitamins, minerals, and supplements (e.g., Vitamin D 2000IU, Calcium 600mg)"
@@ -1758,8 +1867,8 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="herbal_remedies"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Herbal remedies or natural products</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">Herbal remedies or natural products</FormLabel>
                                 <FormControl>
                                   <Textarea
                                     placeholder="Include any herbal remedies, natural products, or alternative treatments"
@@ -1783,21 +1892,21 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="work_productivity_impact"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>How do your symptoms affect your work productivity?</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">How do your symptoms affect your work productivity?</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                     {[
                                       { value: '0', label: 'No impact', desc: 'Symptoms don\'t affect work performance' },
                                       { value: '1', label: 'Mild impact', desc: 'Occasionally affects concentration or energy' },
                                       { value: '2', label: 'Moderate impact', desc: 'Regularly affects work quality or efficiency' },
                                       { value: '3', label: 'Severe impact', desc: 'Significantly impairs work performance' }
                                     ].map((option) => (
-                                      <div key={option.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.value} id={`work_${option.value}`} />
-                                        <Label htmlFor={`work_${option.value}`} className="flex-1">
-                                          <span className="font-medium">{option.label}</span>
-                                          <span className="text-sm text-muted-foreground ml-2">{option.desc}</span>
+                                      <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                        <RadioGroupItem className="mt-1" value={option.value} id={`work_${option.value}`} />
+                                        <Label className="flex-1 cursor-pointer" htmlFor={`work_${option.value}`}>
+                                          <div className="font-medium text-foreground">{option.label}</div>
+                                          <div className="text-sm text-muted-foreground mt-1">{option.desc}</div>
                                         </Label>
                                       </div>
                                     ))}
@@ -1812,16 +1921,16 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="social_activities_impact"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>How do your symptoms affect your social activities?</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">How do your symptoms affect your social activities?</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                     {severityOptions.map((option) => (
-                                      <div key={option.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.value} id={`social_${option.value}`} />
-                                        <Label htmlFor={`social_${option.value}`} className="flex-1">
-                                          <span className="font-medium">{option.label}</span>
-                                          <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                      <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                        <RadioGroupItem className="mt-1" value={option.value} id={`social_${option.value}`} />
+                                        <Label className="flex-1 cursor-pointer" htmlFor={`social_${option.value}`}>
+                                          <div className="font-medium text-foreground">{option.label}</div>
+                                          <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                         </Label>
                                       </div>
                                     ))}
@@ -1836,16 +1945,16 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="relationship_impact"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>How do your symptoms affect your personal relationships?</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">How do your symptoms affect your personal relationships?</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
                                     {severityOptions.map((option) => (
-                                      <div key={option.value} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.value} id={`relationship_${option.value}`} />
-                                        <Label htmlFor={`relationship_${option.value}`} className="flex-1">
-                                          <span className="font-medium">{option.label}</span>
-                                          <span className="text-sm text-muted-foreground ml-2">{option.description}</span>
+                                      <div key={option.value} className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                        <RadioGroupItem className="mt-1" value={option.value} id={`relationship_${option.value}`} />
+                                        <Label className="flex-1 cursor-pointer" htmlFor={`relationship_${option.value}`}>
+                                          <div className="font-medium text-foreground">{option.label}</div>
+                                          <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
                                         </Label>
                                       </div>
                                     ))}
@@ -1860,29 +1969,29 @@ export default function SymptomAssessmentPage() {
                             control={form.control}
                             name="overall_wellbeing"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>How would you rate your overall sense of wellbeing?</FormLabel>
+                              <FormItem className="space-y-4">
+                                <FormLabel className="text-base font-medium">How would you rate your overall sense of wellbeing?</FormLabel>
                                 <FormControl>
-                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="excellent" id="wellbeing_excellent" />
-                                      <Label htmlFor="wellbeing_excellent">Excellent</Label>
+                                  <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="excellent" id="wellbeing_excellent" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="wellbeing_excellent">Excellent</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="good" id="wellbeing_good" />
-                                      <Label htmlFor="wellbeing_good">Good</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="good" id="wellbeing_good" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="wellbeing_good">Good</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="fair" id="wellbeing_fair" />
-                                      <Label htmlFor="wellbeing_fair">Fair</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="fair" id="wellbeing_fair" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="wellbeing_fair">Fair</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="poor" id="wellbeing_poor" />
-                                      <Label htmlFor="wellbeing_poor">Poor</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="poor" id="wellbeing_poor" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="wellbeing_poor">Poor</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="very_poor" id="wellbeing_very_poor" />
-                                      <Label htmlFor="wellbeing_very_poor">Very Poor</Label>
+                                    <div className="flex items-start space-x-3 p-3 rounded-lg border border-brand-gray/20 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
+                                      <RadioGroupItem className="mt-1" value="very_poor" id="wellbeing_very_poor" />
+                                      <Label className="flex-1 cursor-pointer" htmlFor="wellbeing_very_poor">Very Poor</Label>
                                     </div>
                                   </RadioGroup>
                                 </FormControl>
@@ -1901,7 +2010,7 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="primary_concerns"
                           render={() => (
-                            <FormItem>
+                            <FormItem className="space-y-4">
                               <FormLabel className="text-base">What are your main concerns you'd like to address? (Select all that apply)</FormLabel>
                               <div className="grid md:grid-cols-2 gap-3 mt-3">
                                 {[
@@ -1958,7 +2067,7 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="treatment_preferences"
                           render={() => (
-                            <FormItem>
+                            <FormItem className="space-y-4">
                               <FormLabel className="text-base">Treatment preferences (Select all that interest you)</FormLabel>
                               <div className="grid md:grid-cols-2 gap-3 mt-3">
                                 {[
@@ -2014,7 +2123,7 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="treatment_concerns"
                           render={() => (
-                            <FormItem>
+                            <FormItem className="space-y-4">
                               <FormLabel className="text-base">Any concerns about treatment options? (Select all that apply)</FormLabel>
                               <div className="grid md:grid-cols-2 gap-3 mt-3">
                                 {[
@@ -2075,8 +2184,8 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="additional_symptoms"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Any other symptoms or concerns not covered above?</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Any other symptoms or concerns not covered above?</FormLabel>
                               <FormControl>
                                 <Textarea
                                   placeholder="Describe any other symptoms, patterns you've noticed, or health concerns..."
@@ -2093,8 +2202,8 @@ export default function SymptomAssessmentPage() {
                           control={form.control}
                           name="questions_for_doctor"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Questions you'd like to discuss with your doctor</FormLabel>
+                            <FormItem className="space-y-4">
+                              <FormLabel className="text-base font-medium">Questions you'd like to discuss with your doctor</FormLabel>
                               <FormControl>
                                 <Textarea
                                   placeholder="List any specific questions or topics you'd like to address during your consultation..."
@@ -2112,12 +2221,13 @@ export default function SymptomAssessmentPage() {
                 )}
 
                 {/* Navigation Buttons */}
-                <div className="flex justify-between pt-6 mt-6 border-t">
+                <div className="flex justify-between pt-8 mt-8 border-t border-brand-gray/20">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={prevStep}
                     disabled={currentStep === 1}
+                    className="border-brand-gray/30 hover:border-brand-green/50 hover:bg-brand-green/5 disabled:opacity-50 cursor-pointer"
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Previous
@@ -2127,7 +2237,7 @@ export default function SymptomAssessmentPage() {
                     <Button
                       type="button"
                       onClick={nextStep}
-                      className="btn-healthcare-primary"
+                      className="btn-healthcare-primary cursor-pointer shadow-md hover:shadow-lg transition-all"
                     >
                       Next
                       <ArrowRight className="h-4 w-4 ml-2" />
@@ -2136,7 +2246,7 @@ export default function SymptomAssessmentPage() {
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="btn-healthcare-primary"
+                      className="btn-healthcare-primary cursor-pointer shadow-md hover:shadow-lg transition-all disabled:opacity-50"
                     >
                       {isSubmitting ? 'Submitting...' : 'Complete Assessment'}
                       {!isSubmitting && <CheckCircle className="h-4 w-4 ml-2" />}
@@ -2149,5 +2259,20 @@ export default function SymptomAssessmentPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function SymptomAssessmentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-brand-pink/20 via-white to-brand-green-light/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-blue mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading assessment...</p>
+        </div>
+      </div>
+    }>
+      <SymptomAssessmentContent />
+    </Suspense>
   )
 }

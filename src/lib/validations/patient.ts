@@ -32,6 +32,8 @@ export const patientRegistrationSchema = z.object({
   phone: z
     .string()
     .regex(phoneRegex, 'Please enter a valid South African phone number (e.g., 0812345678 or +27812345678)'),
+
+  profile_photo_url: z.string().url().optional().nullable(),
   
   date_of_birth: z
     .string()
@@ -67,7 +69,9 @@ export const patientRegistrationSchema = z.object({
       'North West',
       'Northern Cape',
       'Western Cape'
-    ]),
+    ], {
+      errorMap: () => ({ message: "Please select your province" })
+    }),
     postal_code: z
       .string()
       .regex(/^\d{4}$/, 'Postal code must be 4 digits')
@@ -77,7 +81,10 @@ export const patientRegistrationSchema = z.object({
     name: z.string().min(2, 'Emergency contact name is required'),
     relationship: z.string().min(2, 'Relationship is required'),
     phone: z.string().regex(phoneRegex, 'Please enter a valid phone number')
-  })
+  }),
+  
+  id_document_url: z.string().optional(),
+  medical_aid_card_url: z.string().optional()
 }).refine((data) => {
   // If medical aid scheme is selected, medical aid number is required
   if (data.medical_aid_scheme && data.medical_aid_scheme !== 'none') {
@@ -103,9 +110,13 @@ export const appointmentBookingSchema = z.object({
   
   appointment_time: z.string().min(1, 'Please select an appointment time'),
   
-  consultation_type: z.enum(['initial', 'follow_up', 'emergency']),
+  consultation_type: z.enum(['initial', 'follow_up', 'emergency'], {
+    errorMap: () => ({ message: "Please select a consultation type" })
+  }),
   
-  payment_method: z.enum(['cash', 'medical_aid']),
+  payment_method: z.enum(['cash', 'medical_aid'], {
+    errorMap: () => ({ message: "Please select a payment method" })
+  }),
   
   symptoms_description: z
     .string()
@@ -125,45 +136,101 @@ export const appointmentBookingSchema = z.object({
 
 export const symptomAssessmentSchema = z.object({
   // Vasomotor Symptoms (Hot Flashes & Night Sweats)
-  hot_flashes_frequency: z.enum(['0', '1', '2', '3', '4']), // 0=none, 1=<1/day, 2=1-5/day, 3=6-10/day, 4=>10/day
-  hot_flashes_severity: z.enum(['0', '1', '2', '3']), // 0=none, 1=mild, 2=moderate, 3=severe
-  night_sweats_frequency: z.enum(['0', '1', '2', '3', '4']),
-  night_sweats_severity: z.enum(['0', '1', '2', '3']),
+  hot_flashes_frequency: z.enum(['0', '1', '2', '3', '4'], {
+    errorMap: () => ({ message: "Please select how often you experience hot flashes" })
+  }),
+  hot_flashes_severity: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please select the severity of your hot flashes" })
+  }),
+  night_sweats_frequency: z.enum(['0', '1', '2', '3', '4'], {
+    errorMap: () => ({ message: "Please select how often you experience night sweats" })
+  }),
+  night_sweats_severity: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please select the severity of your night sweats" })
+  }),
   
   // Sleep & Mood Symptoms
-  sleep_quality: z.enum(['0', '1', '2', '3']), // 0=excellent, 1=good, 2=poor, 3=very poor
-  sleep_onset_difficulty: z.enum(['0', '1', '2', '3']), // 0=never, 1=sometimes, 2=often, 3=always
-  early_morning_wakening: z.enum(['0', '1', '2', '3']),
-  mood_swings: z.enum(['0', '1', '2', '3']),
-  irritability: z.enum(['0', '1', '2', '3']),
-  anxiety: z.enum(['0', '1', '2', '3']),
-  depression: z.enum(['0', '1', '2', '3']),
+  sleep_quality: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate your sleep quality" })
+  }),
+  sleep_onset_difficulty: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please select how often you have difficulty falling asleep" })
+  }),
+  early_morning_wakening: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please select how often you wake up too early" })
+  }),
+  mood_swings: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you experience mood swings" })
+  }),
+  irritability: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you feel irritable" })
+  }),
+  anxiety: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate your anxiety levels" })
+  }),
+  depression: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you feel depressed" })
+  }),
   
   // Cognitive Symptoms
-  concentration_difficulty: z.enum(['0', '1', '2', '3']),
-  memory_problems: z.enum(['0', '1', '2', '3']),
-  mental_fatigue: z.enum(['0', '1', '2', '3']),
+  concentration_difficulty: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate your difficulty concentrating" })
+  }),
+  memory_problems: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you experience memory problems" })
+  }),
+  mental_fatigue: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate your mental fatigue levels" })
+  }),
   
   // Physical Symptoms
-  fatigue: z.enum(['0', '1', '2', '3']),
-  joint_aches: z.enum(['0', '1', '2', '3']),
-  muscle_tension: z.enum(['0', '1', '2', '3']),
-  headaches: z.enum(['0', '1', '2', '3']),
-  breast_tenderness: z.enum(['0', '1', '2', '3']),
-  weight_gain: z.enum(['0', '1', '2', '3']),
-  bloating: z.enum(['0', '1', '2', '3']),
+  fatigue: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate your fatigue levels" })
+  }),
+  joint_aches: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you experience joint aches" })
+  }),
+  muscle_tension: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate your muscle tension levels" })
+  }),
+  headaches: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you experience headaches" })
+  }),
+  breast_tenderness: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you experience breast tenderness" })
+  }),
+  weight_gain: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate any recent weight gain" })
+  }),
+  bloating: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you experience bloating" })
+  }),
   
   // Sexual & Urogenital Symptoms
-  decreased_libido: z.enum(['0', '1', '2', '3']),
-  vaginal_dryness: z.enum(['0', '1', '2', '3']),
-  painful_intercourse: z.enum(['0', '1', '2', '3']),
-  urinary_urgency: z.enum(['0', '1', '2', '3']),
-  urinary_frequency: z.enum(['0', '1', '2', '3']),
+  decreased_libido: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate changes in your libido" })
+  }),
+  vaginal_dryness: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you experience vaginal dryness" })
+  }),
+  painful_intercourse: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you experience painful intercourse" })
+  }),
+  urinary_urgency: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you experience urinary urgency" })
+  }),
+  urinary_frequency: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how often you experience frequent urination" })
+  }),
   
   // Menstrual History
-  menstrual_status: z.enum(['regular', 'irregular', 'stopped_less_than_1_year', 'stopped_more_than_1_year', 'hysterectomy']),
+  menstrual_status: z.enum(['regular', 'irregular', 'stopped_less_than_1_year', 'stopped_more_than_1_year', 'hysterectomy'], {
+    errorMap: () => ({ message: "Please select your current menstrual status" })
+  }),
   last_menstrual_period: z.string().optional(),
-  menstrual_flow_changes: z.enum(['0', '1', '2', '3']), // 0=no change, 1=lighter, 2=heavier, 3=very irregular
+  menstrual_flow_changes: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please select any changes in your menstrual flow" })
+  }),
   
   // Medical History
   age: z.number().min(18).max(100),
@@ -182,11 +249,21 @@ export const symptomAssessmentSchema = z.object({
   blood_clots_history: z.boolean(),
   
   // Lifestyle Factors
-  smoking_status: z.enum(['never', 'former', 'current_light', 'current_moderate', 'current_heavy']),
-  alcohol_frequency: z.enum(['never', 'rarely', 'weekly', 'daily', 'multiple_daily']),
-  exercise_frequency: z.enum(['none', 'rarely', '1-2_weekly', '3-4_weekly', '5+_weekly']),
-  exercise_intensity: z.enum(['light', 'moderate', 'vigorous']),
-  stress_level: z.enum(['low', 'moderate', 'high', 'very_high']),
+  smoking_status: z.enum(['never', 'former', 'current_light', 'current_moderate', 'current_heavy'], {
+    errorMap: () => ({ message: "Please select your smoking status" })
+  }),
+  alcohol_frequency: z.enum(['never', 'rarely', 'weekly', 'daily', 'multiple_daily'], {
+    errorMap: () => ({ message: "Please select how often you consume alcohol" })
+  }),
+  exercise_frequency: z.enum(['none', 'rarely', '1-2_weekly', '3-4_weekly', '5+_weekly'], {
+    errorMap: () => ({ message: "Please select how often you exercise" })
+  }),
+  exercise_intensity: z.enum(['light', 'moderate', 'vigorous'], {
+    errorMap: () => ({ message: "Please select your typical exercise intensity" })
+  }),
+  stress_level: z.enum(['low', 'moderate', 'high', 'very_high'], {
+    errorMap: () => ({ message: "Please rate your current stress level" })
+  }),
   
   // Current Medications & Supplements
   current_medications: z.string().max(1000).optional(),
@@ -194,10 +271,18 @@ export const symptomAssessmentSchema = z.object({
   herbal_remedies: z.string().max(500).optional(),
   
   // Quality of Life Impact
-  work_productivity_impact: z.enum(['0', '1', '2', '3']), // 0=no impact, 3=severe impact
-  social_activities_impact: z.enum(['0', '1', '2', '3']),
-  relationship_impact: z.enum(['0', '1', '2', '3']),
-  overall_wellbeing: z.enum(['excellent', 'good', 'fair', 'poor', 'very_poor']),
+  work_productivity_impact: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how symptoms affect your work productivity" })
+  }),
+  social_activities_impact: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how symptoms affect your social activities" })
+  }),
+  relationship_impact: z.enum(['0', '1', '2', '3'], {
+    errorMap: () => ({ message: "Please rate how symptoms affect your relationships" })
+  }),
+  overall_wellbeing: z.enum(['excellent', 'good', 'fair', 'poor', 'very_poor'], {
+    errorMap: () => ({ message: "Please rate your overall wellbeing" })
+  }),
   
   // Treatment Goals & Preferences
   primary_concerns: z.array(z.string()).min(1, 'Please select at least one primary concern'),

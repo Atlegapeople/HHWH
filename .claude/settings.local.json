@@ -11,7 +11,11 @@
       "Bash(node:*)",
       "Bash(mv:*)",
       "Bash(timeout:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(sed:*)",
+      "Bash(npm install:*)"
     ],
     "deny": []
   }

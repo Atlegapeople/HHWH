@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { LoadingSpinner } from '@/components/ui/loading'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function LoginPage() {
+function ContentWithSearchParams() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -187,7 +188,10 @@ export default function LoginPage() {
                 disabled={loading}
                 className="btn-healthcare-primary w-full"
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                <div className="flex items-center justify-center">
+                  {loading && <LoadingSpinner size="sm" className="mr-2" />}
+                  {loading ? 'Signing in...' : 'Sign In'}
+                </div>
               </Button>
             </form>
 
@@ -201,5 +205,17 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-brand-pink/30 via-white to-brand-blue-light/20 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange"></div>
+      </div>
+    }>
+      <ContentWithSearchParams />
+    </Suspense>
   )
 }

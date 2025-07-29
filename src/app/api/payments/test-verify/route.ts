@@ -34,7 +34,7 @@ export async function POST() {
         console.log('🧪 TEST: Updating appointment status...');
         await appointmentService.updateAppointment(appointmentId, {
           payment_status: 'paid',
-          status: 'scheduled'
+          appointment_status: 'scheduled'
         });
         console.log('🧪 TEST: Appointment updated successfully');
       } catch (error) {

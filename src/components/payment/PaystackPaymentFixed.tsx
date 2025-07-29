@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, CreditCard } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 import { PaymentData, paystackService } from '@/lib/paystack';
+import { LoadingSpinner } from '@/components/ui/loading';
 
 declare global {
   interface Window {
@@ -140,12 +141,12 @@ export function PaystackPaymentFixed({
     >
       {loading ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <LoadingSpinner size="sm" className="mr-2" />
           Processing...
         </>
       ) : !scriptLoaded ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <LoadingSpinner size="sm" className="mr-2" />
           Loading...
         </>
       ) : (

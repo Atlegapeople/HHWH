@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +24,11 @@ import {
   LogOut,
   ChevronDown,
   Activity,
-  Heart
+  Heart,
+  Home,
+  Info,
+  Stethoscope,
+  UserCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -30,9 +36,51 @@ import { useRouter, usePathname } from 'next/navigation'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null)
   const { user, signOut, loading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const supabase = createClient()
+
+  // Fetch user's profile photo
+  useEffect(() => {
+    const fetchProfilePhoto = async () => {
+      if (!user) {
+        setProfilePhoto(null)
+        return
+      }
+
+      try {
+        const { data: patient, error } = await supabase
+          .from('patients')
+          .select('profile_photo_url')
+          .eq('email', user.email)
+          .single()
+
+        if (error) {
+          // Silently handle the case where patient record doesn't exist or no photo is uploaded
+          // This is expected behavior when a user hasn't completed their profile yet
+          if (error.code === 'PGRST116') {
+            // No rows returned - patient record doesn't exist yet
+            setProfilePhoto(null)
+            return
+          }
+          // Only log unexpected errors
+          console.warn('Unexpected error fetching profile photo:', error.message)
+          setProfilePhoto(null)
+          return
+        }
+
+        setProfilePhoto(patient?.profile_photo_url || null)
+      } catch (error) {
+        // Only log unexpected errors, not profile photo not found
+        console.warn('Unexpected error in profile photo fetch:', error)
+        setProfilePhoto(null)
+      }
+    }
+
+    fetchProfilePhoto()
+  }, [user, supabase])
 
   const handleSignOut = async () => {
     await signOut()
@@ -41,9 +89,19 @@ export default function Navbar() {
 
   const isActive = (path: string) => pathname === path
 
-  // Don't show navbar on auth pages
-  if (pathname.startsWith('/auth/')) {
-    return null
+  const getInitials = (name?: string, email?: string) => {
+    if (name) {
+      return name
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    }
+    if (email) {
+      return email.slice(0, 2).toUpperCase()
+    }
+    return 'U'
   }
 
   return (
@@ -55,120 +113,173 @@ export default function Navbar() {
             <Image 
               src="/images/Logo-HHWH.png" 
               alt="HHWH Online Clinic" 
-              width={160} 
-              height={52}
-              className="h-12 w-auto"
+              width={180} 
+              height={58}
+              className="h-14 w-auto"
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-2">
             <Link 
               href="/"
-              className={`text-sm font-medium transition-colors hover:text-brand-purple ${
-                isActive('/') ? 'text-brand-purple' : 'text-muted-foreground'
+              className={`group relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 hover:bg-slate-100/80 ${
+                isActive('/') 
+                  ? 'text-primary bg-primary/10 shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Home
+              <Home className="h-4 w-4" />
+              <span>Home</span>
+              {isActive('/') && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>
+              )}
             </Link>
             <Link 
               href="/about"
-              className={`text-sm font-medium transition-colors hover:text-brand-purple ${
-                isActive('/about') ? 'text-brand-purple' : 'text-muted-foreground'
+              className={`group relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 hover:bg-slate-100/80 ${
+                isActive('/about') 
+                  ? 'text-primary bg-primary/10 shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              About
+              <Info className="h-4 w-4" />
+              <span>About</span>
+              {isActive('/about') && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>
+              )}
             </Link>
             <Link 
               href="/services"
-              className={`text-sm font-medium transition-colors hover:text-brand-purple ${
-                isActive('/services') ? 'text-brand-purple' : 'text-muted-foreground'
+              className={`group relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 hover:bg-slate-100/80 ${
+                isActive('/services') 
+                  ? 'text-primary bg-primary/10 shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Services
+              <Stethoscope className="h-4 w-4" />
+              <span>Services</span>
+              {isActive('/services') && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>
+              )}
             </Link>
             <Link 
               href="/patient"
-              className={`text-sm font-medium transition-colors hover:text-brand-purple ${
-                isActive('/patient') ? 'text-brand-purple' : 'text-muted-foreground'
+              className={`group relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 hover:shadow-sm ${
+                isActive('/patient') || pathname.startsWith('/patient')
+                  ? 'text-white bg-gradient-to-r from-[#217B82] to-[#1a6b72] shadow-lg shadow-[#217B82]/25' 
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Patient Portal
+              <UserCircle className="h-4 w-4" />
+              <span>Patient Portal</span>
+              {(isActive('/patient') || pathname.startsWith('/patient')) && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
+              )}
             </Link>
           </div>
 
           {/* Auth Section */}
           <div className="hidden md:flex items-center space-x-4">
             {loading ? (
-              <div className="w-8 h-8 animate-pulse bg-gray-200 rounded-full"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full animate-pulse"></div>
+                <div className="hidden md:block">
+                  <div className="w-20 h-3 bg-slate-200 rounded-full animate-pulse mb-1"></div>
+                  <div className="w-12 h-2 bg-slate-200 rounded-full animate-pulse"></div>
+                </div>
+              </div>
             ) : user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-brand-purple/10 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-brand-purple" />
+                  <Button variant="ghost" className="flex items-center space-x-2 px-4 py-2 rounded-xl hover:bg-slate-100/80 transition-all duration-300">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profilePhoto || undefined} alt="Profile photo" />
+                      <AvatarFallback className="bg-gradient-to-br from-[#217B82] to-[#1a6b72] text-white text-xs">
+                        {getInitials(user.user_metadata?.full_name, user.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium text-foreground">
+                        {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                      </span>
                     </div>
-                    <span className="text-sm font-medium">
-                      {user.user_metadata?.full_name || user.email?.split('@')[0]}
-                    </span>
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">
-                        {user.user_metadata?.full_name || 'User'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {user.email}
-                      </p>
+                <DropdownMenuContent align="end" className="w-64 p-2 shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+                  <DropdownMenuLabel className="p-3">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={profilePhoto || undefined} alt="Profile photo" />
+                        <AvatarFallback className="bg-gradient-to-br from-[#217B82] to-[#1a6b72] text-white text-sm">
+                          {getInitials(user.user_metadata?.full_name, user.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <p className="text-sm font-semibold text-foreground">
+                          {user.user_metadata?.full_name || 'User'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="my-2" />
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="flex items-center">
-                      <User className="mr-2 h-4 w-4" />
-                      Dashboard
+                    <Link href="/patient/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#217B82]/10">
+                        <User className="h-4 w-4 text-[#217B82]" />
+                      </div>
+                      <span className="font-medium">Dashboard</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/patient/book-appointment" className="flex items-center">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      Book Appointment
+                    <Link href="/patient/book-appointment" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
+                        <Calendar className="h-4 w-4 text-green-600" />
+                      </div>
+                      <span className="font-medium">Book Appointment</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/patient/assessment" className="flex items-center">
-                      <Activity className="mr-2 h-4 w-4" />
-                      Health Assessment
+                    <Link href="/patient/assessment" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
+                        <Activity className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <span className="font-medium">Health Assessment</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/profile" className="flex items-center">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Profile Settings
+                    <Link href="/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-500/10">
+                        <Settings className="h-4 w-4 text-slate-600" />
+                      </div>
+                      <span className="font-medium">Profile Settings</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="my-2" />
                   <DropdownMenuItem 
                     onClick={handleSignOut}
-                    className="text-red-600 focus:text-red-600"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors text-red-600 focus:text-red-600"
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10">
+                      <LogOut className="h-4 w-4 text-red-600" />
+                    </div>
+                    <span className="font-medium">Sign Out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-3">
                 <Link href="/auth/login">
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="px-4 py-2 rounded-xl hover:bg-slate-100/80 transition-all duration-300">
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/auth/signup">
-                  <Button className="btn-healthcare-primary" size="sm">
+                  <Button className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#217B82] to-[#1a6b72] hover:from-[#1a6b72] hover:to-[#217B82] text-white shadow-lg shadow-[#217B82]/25 hover:shadow-xl hover:shadow-[#217B82]/30 transition-all duration-300" size="sm">
                     Get Started
                   </Button>
                 </Link>
@@ -190,52 +301,67 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t">
-            <div className="flex flex-col space-y-4">
+          <div className="md:hidden py-4 border-t bg-white/95 backdrop-blur-sm">
+            <div className="flex flex-col space-y-2">
               <Link 
                 href="/"
-                className={`text-sm font-medium transition-colors hover:text-brand-purple ${
-                  isActive('/') ? 'text-brand-purple' : 'text-muted-foreground'
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  isActive('/') 
+                    ? 'text-primary bg-primary/10 shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-slate-100/80'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Home
+                <Home className="h-4 w-4" />
+                <span>Home</span>
               </Link>
               <Link 
                 href="/about"
-                className={`text-sm font-medium transition-colors hover:text-brand-purple ${
-                  isActive('/about') ? 'text-brand-purple' : 'text-muted-foreground'
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  isActive('/about') 
+                    ? 'text-primary bg-primary/10 shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-slate-100/80'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                About
+                <Info className="h-4 w-4" />
+                <span>About</span>
               </Link>
               <Link 
                 href="/services"
-                className={`text-sm font-medium transition-colors hover:text-brand-purple ${
-                  isActive('/services') ? 'text-brand-purple' : 'text-muted-foreground'
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  isActive('/services') 
+                    ? 'text-primary bg-primary/10 shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-slate-100/80'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Services
+                <Stethoscope className="h-4 w-4" />
+                <span>Services</span>
               </Link>
               <Link 
                 href="/patient"
-                className={`text-sm font-medium transition-colors hover:text-brand-purple ${
-                  isActive('/patient') ? 'text-brand-purple' : 'text-muted-foreground'
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  isActive('/patient') || pathname.startsWith('/patient')
+                    ? 'text-white bg-gradient-to-r from-[#217B82] to-[#1a6b72] shadow-lg shadow-[#217B82]/25' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Patient Portal
+                <UserCircle className="h-4 w-4" />
+                <span>Patient Portal</span>
               </Link>
 
               <div className="border-t pt-4">
                 {user ? (
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-brand-purple/10 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-brand-purple" />
-                      </div>
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={profilePhoto || undefined} alt="Profile photo" />
+                        <AvatarFallback className="bg-[#217B82]/10 text-[#217B82] text-xs">
+                          {getInitials(user.user_metadata?.full_name, user.email)}
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
                         <p className="text-sm font-medium">
                           {user.user_metadata?.full_name || 'User'}
@@ -247,8 +373,8 @@ export default function Navbar() {
                     </div>
                     <div className="space-y-2">
                       <Link 
-                        href="/dashboard"
-                        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-brand-purple"
+                        href="/patient/dashboard"
+                        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         <User className="h-4 w-4" />
@@ -256,7 +382,7 @@ export default function Navbar() {
                       </Link>
                       <Link 
                         href="/patient/book-appointment"
-                        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-brand-purple"
+                        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         <Calendar className="h-4 w-4" />
@@ -264,7 +390,7 @@ export default function Navbar() {
                       </Link>
                       <Link 
                         href="/patient/assessment"
-                        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-brand-purple"
+                        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         <Activity className="h-4 w-4" />
@@ -292,7 +418,7 @@ export default function Navbar() {
                       </Button>
                     </Link>
                     <Link href="/auth/signup" onClick={() => setIsMenuOpen(false)}>
-                      <Button className="btn-healthcare-primary w-full" size="sm">
+                      <Button className="w-full bg-gradient-to-r from-[#217B82] to-[#1a6b72] hover:from-[#1a6b72] hover:to-[#217B82] text-white shadow-lg shadow-[#217B82]/25 hover:shadow-xl hover:shadow-[#217B82]/30 transition-all duration-300" size="sm">
                         Get Started
                       </Button>
                     </Link>

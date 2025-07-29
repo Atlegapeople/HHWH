@@ -22,10 +22,17 @@ import {
   CheckCircle,
   XCircle,
   Phone,
-  Video
+  Video,
+  Users,
+  TrendingUp,
+  Activity,
+  ArrowRight,
+  Plus,
+  Stethoscope
 } from 'lucide-react'
 import { AppointmentService } from '@/lib/supabase/appointments'
 import { format, parseISO } from 'date-fns'
+import Link from 'next/link'
 
 interface AppointmentData {
   id: string
@@ -64,7 +71,7 @@ export default function AppointmentsPage() {
       setLoading(true)
       const appointmentService = new AppointmentService()
       
-      // Get all appointments for the doctor
+      // Get all appointments for the doctor with patient data
       const data = await appointmentService.getDoctorAppointments(doctorId)
       
       // Sort by date and time (most recent first)
@@ -74,17 +81,11 @@ export default function AppointmentsPage() {
         return dateB.getTime() - dateA.getTime()
       })
 
-      // Add mock patient data - in real app, this would come from a join query
-      const appointmentsWithPatients = sortedData.map(apt => ({
-        ...apt,
-        patient_name: 'Patient Name', // Will be populated from patients table
-        patient_email: 'patient@example.com',
-        patient_phone: '+27 12 345 6789'
-      }))
-
-      setAppointments(appointmentsWithPatients)
+      setAppointments(sortedData)
     } catch (error) {
       console.error('Error loading appointments:', error)
+      // Show empty state on error
+      setAppointments([])
     } finally {
       setLoading(false)
     }
@@ -93,23 +94,56 @@ export default function AppointmentsPage() {
   const filterAppointments = () => {
     let filtered = [...appointments]
 
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(apt => 
-        apt.patient_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.consultation_type.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    // Filter by search term (enhanced search)
+    if (searchTerm && searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter(apt => {
+        // Search in patient name
+        const patientNameMatch = apt.patient_name?.toLowerCase().includes(searchLower)
+        
+        // Search in patient email  
+        const emailMatch = apt.patient_email?.toLowerCase().includes(searchLower)
+        
+        // Search in consultation type
+        const consultationMatch = apt.consultation_type?.toLowerCase().includes(searchLower)
+        
+        // Search in symptoms description
+        const symptomsMatch = apt.symptoms_description?.toLowerCase().includes(searchLower)
+        
+        // Search in appointment date (formatted)
+        const dateMatch = apt.appointment_date?.includes(searchLower)
+        
+        // Search in appointment time
+        const timeMatch = apt.appointment_time?.includes(searchLower)
+        
+        // Search in payment status
+        const paymentMatch = apt.payment_status?.toLowerCase().includes(searchLower)
+        
+        // Search in appointment status
+        const statusMatch = apt.appointment_status?.toLowerCase().includes(searchLower)
+
+        return patientNameMatch || emailMatch || consultationMatch || 
+               symptomsMatch || dateMatch || timeMatch || 
+               paymentMatch || statusMatch
+      })
     }
 
     // Filter by status
-    if (statusFilter !== 'all') {
+    if (statusFilter && statusFilter !== 'all') {
       filtered = filtered.filter(apt => apt.appointment_status === statusFilter)
     }
 
     // Filter by date
-    if (selectedDate) {
+    if (selectedDate && selectedDate.trim()) {
       filtered = filtered.filter(apt => apt.appointment_date === selectedDate)
     }
+
+    // Sort filtered results by newest first (date + time)
+    filtered.sort((a, b) => {
+      const dateTimeA = new Date(`${a.appointment_date} ${a.appointment_time}`)
+      const dateTimeB = new Date(`${b.appointment_date} ${b.appointment_time}`)
+      return dateTimeB.getTime() - dateTimeA.getTime()
+    })
 
     setFilteredAppointments(filtered)
   }
@@ -117,13 +151,13 @@ export default function AppointmentsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-light-green-cyan text-gray-800">Completed</Badge>
+        return <Badge className="bg-brand-green/10 text-brand-green border-brand-green/20">Completed</Badge>
       case 'scheduled':
-        return <Badge className="bg-pale-cyan-blue text-gray-800">Scheduled</Badge>
+        return <Badge className="bg-brand-blue/10 text-brand-blue border-brand-blue/20">Scheduled</Badge>
       case 'cancelled':
-        return <Badge variant="destructive">Cancelled</Badge>
+        return <Badge className="bg-brand-red/10 text-brand-red border-brand-red/20">Cancelled</Badge>
       case 'no-show':
-        return <Badge className="bg-luminous-vivid-amber text-gray-800">No Show</Badge>
+        return <Badge className="bg-brand-amber/10 text-brand-amber border-brand-amber/20">No Show</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
@@ -132,11 +166,11 @@ export default function AppointmentsPage() {
   const getPaymentBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-vivid-green-cyan text-white">Paid</Badge>
+        return <Badge className="bg-brand-green/10 text-brand-green border-brand-green/20">Paid</Badge>
       case 'pending':
-        return <Badge className="bg-luminous-vivid-amber text-gray-800">Pending</Badge>
+        return <Badge className="bg-brand-amber/10 text-brand-amber border-brand-amber/20">Pending</Badge>
       case 'failed':
-        return <Badge variant="destructive">Failed</Badge>
+        return <Badge className="bg-brand-red/10 text-brand-red border-brand-red/20">Failed</Badge>
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
@@ -166,55 +200,116 @@ export default function AppointmentsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+      <div className="space-y-8">
+        {/* Header Skeleton */}
+        <div className="bg-gradient-to-r from-brand-blue/10 via-brand-green/5 to-brand-purple/10 rounded-2xl p-6 animate-pulse">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gray-300 rounded-2xl"></div>
+              <div>
+                <div className="h-8 bg-gray-300 rounded w-48 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-64"></div>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center gap-4">
+              <div className="text-right">
+                <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                <div className="h-6 bg-gray-300 rounded w-16"></div>
+              </div>
+              <div className="h-10 bg-gray-300 rounded w-32"></div>
+            </div>
+          </div>
         </div>
+        
+        {/* Filters Skeleton */}
+        <Card className="card-healthcare border-2">
+          <CardContent className="p-6 animate-pulse">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 h-10 bg-gray-200 rounded"></div>
+              <div className="flex gap-3">
+                <div className="w-32 h-10 bg-gray-200 rounded"></div>
+                <div className="w-32 h-10 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Table Skeleton */}
+        <Card className="card-healthcare border-2">
+          <CardHeader className="pb-4 animate-pulse">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-300 rounded-2xl"></div>
+                <div className="h-6 bg-gray-300 rounded w-48"></div>
+              </div>
+              <div className="h-8 bg-gray-300 rounded w-20"></div>
+            </div>
+          </CardHeader>
+          <CardContent className="animate-pulse">
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-100 rounded"></div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
-          <p className="text-gray-600">Manage your appointments and patient consultations</p>
+      <div className="bg-gradient-to-r from-brand-blue/10 via-brand-green/5 to-brand-purple/10 rounded-2xl p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-heading font-bold text-foreground flex items-center gap-3">
+              <div className="w-12 h-12 bg-brand-blue/10 rounded-2xl flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-brand-blue" />
+              </div>
+              Appointments
+            </h1>
+            <p className="text-muted-foreground mt-2">Manage your appointments and patient consultations with ease</p>
+          </div>
+          <div className="hidden md:flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Total Appointments</p>
+              <p className="text-2xl font-bold text-brand-blue">{appointments.length}</p>
+            </div>
+            <Button className="bg-brand-blue hover:bg-brand-blue/90 text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              New Appointment
+            </Button>
+          </div>
         </div>
-        <Button className="bg-vivid-cyan-blue hover:bg-vivid-cyan-blue/90">
-          <Calendar className="mr-2 h-4 w-4" />
-          Schedule Appointment
-        </Button>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="card-healthcare border-2 hover:border-brand-blue/30 transition-all duration-300 hover:shadow-lg">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-blue/60 h-4 w-4" />
                 <Input
-                  placeholder="Search patients or consultation type..."
+                  placeholder="Search patients, symptoms, dates, status, or consultation type..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-brand-blue/20 focus:border-brand-blue focus:ring-brand-blue/20"
                 />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-auto"
+                className="w-auto border-brand-blue/20 focus:border-brand-blue focus:ring-brand-blue/20"
               />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-vivid-cyan-blue"
+                className="px-4 py-2 border border-brand-blue/20 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue bg-white"
               >
                 <option value="all">All Status</option>
                 <option value="scheduled">Scheduled</option>
@@ -228,11 +323,22 @@ export default function AppointmentsPage() {
       </Card>
 
       {/* Appointments Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Appointments ({filteredAppointments.length})</span>
-            <Button variant="outline" size="sm">
+      <Card className="card-healthcare border-2 hover:border-brand-green/30 transition-all duration-300 hover:shadow-xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center justify-between text-xl font-heading">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-brand-green/10 rounded-2xl flex items-center justify-center">
+                <Activity className="h-5 w-5 text-brand-green" />
+              </div>
+              <span>Appointments ({filteredAppointments.length}{appointments.length !== filteredAppointments.length ? ` of ${appointments.length}` : ''})</span>
+              {(searchTerm || statusFilter !== 'all' || selectedDate) && (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-brand-amber rounded-full animate-pulse"></div>
+                  <span className="text-xs text-brand-amber font-medium">Filtered</span>
+                </div>
+              )}
+            </div>
+            <Button variant="outline" size="sm" className="border-brand-green text-brand-green hover:bg-brand-green hover:text-white transition-all">
               <Filter className="mr-2 h-4 w-4" />
               Export
             </Button>
@@ -254,8 +360,25 @@ export default function AppointmentsPage() {
               <TableBody>
                 {filteredAppointments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                      No appointments found
+                    <TableCell colSpan={6} className="text-center py-16">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-20 h-20 bg-brand-blue/10 rounded-2xl flex items-center justify-center mb-4">
+                          <Calendar className="h-10 w-10 text-brand-blue/50" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-foreground mb-2">No appointments found</h3>
+                        <p className="text-muted-foreground mb-4">
+                          {appointments.length === 0 
+                            ? "You don't have any appointments yet. Patients can book consultations with you through the platform."
+                            : "No appointments match your current filters. Try adjusting your search criteria."
+                          }
+                        </p>
+                        {appointments.length === 0 && (
+                          <Button className="bg-brand-blue hover:bg-brand-blue/90 text-white">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Schedule First Appointment
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -291,16 +414,27 @@ export default function AppointmentsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="hover:bg-brand-blue/10 text-brand-blue">
                             <Eye className="h-4 w-4" />
                           </Button>
                           {appointment.appointment_status === 'scheduled' && (
                             <>
+                              <Link href={`/doctor/consultation/${appointment.id}`}>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="text-brand-purple hover:text-white hover:bg-brand-purple transition-all duration-300"
+                                  title="Join consultation room"
+                                >
+                                  <Stethoscope className="h-4 w-4" />
+                                </Button>
+                              </Link>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => handleStatusChange(appointment.id, 'completed')}
-                                className="text-vivid-green-cyan hover:text-vivid-green-cyan/80"
+                                className="text-brand-green hover:text-brand-green/80 hover:bg-brand-green/10"
+                                title="Mark as completed"
                               >
                                 <CheckCircle className="h-4 w-4" />
                               </Button>
@@ -308,7 +442,8 @@ export default function AppointmentsPage() {
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => handleStatusChange(appointment.id, 'cancelled')}
-                                className="text-vivid-red hover:text-vivid-red/80"
+                                className="text-brand-red hover:text-brand-red/80 hover:bg-brand-red/10"
+                                title="Cancel appointment"
                               >
                                 <XCircle className="h-4 w-4" />
                               </Button>
@@ -326,54 +461,81 @@ export default function AppointmentsPage() {
       </Card>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="card-healthcare group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-brand-blue/30">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total</p>
-                <p className="text-xl font-bold">{appointments.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Appointments</p>
+                <p className="text-3xl font-bold text-foreground mt-2 group-hover:text-brand-blue transition-colors">{appointments.length}</p>
+                <p className="text-xs text-brand-green mt-1 flex items-center">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  All time
+                </p>
               </div>
-              <Calendar className="h-8 w-8 text-gray-400" />
+              <div className="w-14 h-14 bg-brand-blue/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 group-hover:bg-brand-blue/20">
+                <Calendar className="h-7 w-7 text-brand-blue group-hover:animate-pulse" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        
+        <Card className="card-healthcare group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-brand-amber/30">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Scheduled</p>
-                <p className="text-xl font-bold text-pale-cyan-blue">
+                <p className="text-sm font-medium text-muted-foreground">Scheduled</p>
+                <p className="text-3xl font-bold text-foreground mt-2 group-hover:text-brand-amber transition-colors">
                   {appointments.filter(apt => apt.appointment_status === 'scheduled').length}
                 </p>
+                <p className="text-xs text-brand-amber mt-1 flex items-center">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Upcoming
+                </p>
               </div>
-              <Clock className="h-8 w-8 text-pale-cyan-blue" />
+              <div className="w-14 h-14 bg-brand-amber/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 group-hover:bg-brand-amber/20">
+                <Clock className="h-7 w-7 text-brand-amber group-hover:animate-spin" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        
+        <Card className="card-healthcare group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-brand-green/30">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Completed</p>
-                <p className="text-xl font-bold text-vivid-green-cyan">
+                <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                <p className="text-3xl font-bold text-foreground mt-2 group-hover:text-brand-green transition-colors">
                   {appointments.filter(apt => apt.appointment_status === 'completed').length}
                 </p>
+                <p className="text-xs text-brand-green mt-1 flex items-center">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Successful
+                </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-vivid-green-cyan" />
+              <div className="w-14 h-14 bg-brand-green/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 group-hover:bg-brand-green/20">
+                <CheckCircle className="h-7 w-7 text-brand-green group-hover:animate-bounce" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        
+        <Card className="card-healthcare group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-brand-red/30">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Cancelled</p>
-                <p className="text-xl font-bold text-vivid-red">
+                <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
+                <p className="text-3xl font-bold text-foreground mt-2 group-hover:text-brand-red transition-colors">
                   {appointments.filter(apt => apt.appointment_status === 'cancelled').length}
                 </p>
+                <p className="text-xs text-brand-red mt-1 flex items-center">
+                  <XCircle className="h-3 w-3 mr-1" />
+                  Cancelled
+                </p>
               </div>
-              <XCircle className="h-8 w-8 text-vivid-red" />
+              <div className="w-14 h-14 bg-brand-red/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 group-hover:bg-brand-red/20">
+                <XCircle className="h-7 w-7 text-brand-red group-hover:animate-pulse" />
+              </div>
             </div>
           </CardContent>
         </Card>

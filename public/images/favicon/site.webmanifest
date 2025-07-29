@@ -1,0 +1,22 @@
+{
+  "name": "HHWH Online Clinic - Women's Hormone Health",
+  "short_name": "HHWH Clinic",
+  "description": "Expert hormone health care for South African women",
+  "icons": [
+    {
+      "src": "/images/favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#cf2e2e",
+  "background_color": "#f7dad7",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}

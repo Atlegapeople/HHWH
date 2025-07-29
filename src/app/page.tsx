@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Shield, Users, Stethoscope, Heart, ArrowRight, CheckCircle, Star } from "lucide-react";
+import { Calendar, Shield, Users, Stethoscope, Heart, ArrowRight, CheckCircle, Star, CreditCard } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { HeroCarousel } from "@/components/ui/hero-carousel";
@@ -71,14 +71,18 @@ export default function Home() {
               <Button 
                 onClick={handleBookConsultation}
                 size="lg" 
-                className="btn-healthcare-primary text-lg px-8 py-4 drop-shadow-lg shadow-lg"
+                className="btn-healthcare-primary text-lg px-8 py-4 drop-shadow-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
                 <Calendar className="mr-2 h-6 w-6" />
                 Book Consultation
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg" className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-lg px-8 py-4 drop-shadow-lg backdrop-blur-sm shadow-lg">
-                Learn More
-              </Button>
+              <Link href="/about">
+                <Button variant="outline" size="lg" className="bg-white/20 border-white/30 text-white hover:bg-white/30 text-lg px-8 py-4 drop-shadow-lg backdrop-blur-sm shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                  Learn More
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -100,13 +104,18 @@ export default function Home() {
 
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {/* Patient Portal */}
-              <Card className="card-healthcare group hover:shadow-xl transition-all duration-300 border-2 hover:border-brand-blue/50">
-                <CardHeader className="text-center pb-4">
-                  <div className="mx-auto w-16 h-16 bg-brand-blue/10 rounded-2xl flex items-center justify-center group-hover:bg-brand-blue/20 transition-colors mb-4">
-                    <Users className="h-8 w-8 text-brand-blue" />
+              <Card 
+                className="card-healthcare group hover:shadow-2xl transition-all duration-500 border-2 hover:border-brand-blue/50 hover:-translate-y-2 overflow-hidden relative cursor-pointer"
+                onClick={handleBookConsultation}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="text-center pb-4 relative z-10">
+                  <div className="mx-auto w-16 h-16 bg-brand-blue/10 rounded-2xl flex items-center justify-center group-hover:bg-brand-blue/20 transition-all duration-500 mb-4 group-hover:scale-110 group-hover:rotate-6">
+                    <Users className="h-8 w-8 text-brand-blue group-hover:animate-bounce" />
                   </div>
-                  <CardTitle className="font-heading text-xl">Patient Portal</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="font-heading text-xl group-hover:text-brand-blue transition-colors duration-300">Patient Portal</CardTitle>
+                  <div className="w-12 h-0.5 bg-brand-blue/30 mx-auto mt-2 group-hover:w-20 transition-all duration-300"></div>
+                  <CardDescription className="text-base group-hover:text-foreground/80 transition-colors duration-300">
                     Book appointments, manage your health journey, and connect with specialists
                   </CardDescription>
                 </CardHeader>
@@ -148,13 +157,18 @@ export default function Home() {
               </Card>
 
               {/* Doctor Portal */}
-              <Card className="card-healthcare group hover:shadow-xl transition-all duration-300 border-2 hover:border-brand-green/50">
-                <CardHeader className="text-center pb-4">
-                  <div className="mx-auto w-16 h-16 bg-brand-green/10 rounded-2xl flex items-center justify-center group-hover:bg-brand-green/20 transition-colors mb-4">
-                    <Stethoscope className="h-8 w-8 text-brand-green" />
+              <Card 
+                className="card-healthcare group hover:shadow-2xl transition-all duration-500 border-2 hover:border-brand-green/50 hover:-translate-y-2 overflow-hidden relative cursor-pointer"
+                onClick={handleDoctorPortal}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="text-center pb-4 relative z-10">
+                  <div className="mx-auto w-16 h-16 bg-brand-green/10 rounded-2xl flex items-center justify-center group-hover:bg-brand-green/20 transition-all duration-500 mb-4 group-hover:scale-110 group-hover:rotate-6">
+                    <Stethoscope className="h-8 w-8 text-brand-green group-hover:animate-pulse" />
                   </div>
-                  <CardTitle className="font-heading text-xl">Doctor Portal</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="font-heading text-xl group-hover:text-brand-green transition-colors duration-300">Doctor Portal</CardTitle>
+                  <div className="w-12 h-0.5 bg-brand-green/30 mx-auto mt-2 group-hover:w-20 transition-all duration-300"></div>
+                  <CardDescription className="text-base group-hover:text-foreground/80 transition-colors duration-300">
                     Manage patients, consultations, and grow your practice with our platform
                   </CardDescription>
                 </CardHeader>
@@ -196,13 +210,18 @@ export default function Home() {
               </Card>
 
               {/* Admin Portal */}
-              <Card className="card-healthcare group hover:shadow-xl transition-all duration-300 border-2 hover:border-brand-red/50">
-                <CardHeader className="text-center pb-4">
-                  <div className="mx-auto w-16 h-16 bg-brand-red/10 rounded-2xl flex items-center justify-center group-hover:bg-brand-red/20 transition-colors mb-4">
-                    <Shield className="h-8 w-8 text-brand-red" />
+              <Card 
+                className="card-healthcare group hover:shadow-2xl transition-all duration-500 border-2 hover:border-brand-red/50 hover:-translate-y-2 overflow-hidden relative cursor-pointer"
+                onClick={handleAdminPortal}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-red/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="text-center pb-4 relative z-10">
+                  <div className="mx-auto w-16 h-16 bg-brand-red/10 rounded-2xl flex items-center justify-center group-hover:bg-brand-red/20 transition-all duration-500 mb-4 group-hover:scale-110 group-hover:rotate-6">
+                    <Shield className="h-8 w-8 text-brand-red group-hover:animate-spin" />
                   </div>
-                  <CardTitle className="font-heading text-xl">Admin Portal</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="font-heading text-xl group-hover:text-brand-red transition-colors duration-300">Admin Portal</CardTitle>
+                  <div className="w-12 h-0.5 bg-brand-red/30 mx-auto mt-2 group-hover:w-20 transition-all duration-300"></div>
+                  <CardDescription className="text-base group-hover:text-foreground/80 transition-colors duration-300">
                     System administration, doctor approvals, and platform management
                   </CardDescription>
                 </CardHeader>
@@ -255,48 +274,54 @@ export default function Home() {
                 Advanced healthcare technology designed specifically for South African women's hormone health needs.
               </p>
             </div>
-            <div className="grid md:grid-cols-3 gap-6">
-          <Card className="card-healthcare">
-            <CardHeader>
-              <div className="flex items-center space-x-2">
-                <Shield className="h-6 w-6 text-brand-green" />
-                <CardTitle className="font-heading">Secure & Compliant</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                POPIA compliant platform with end-to-end encryption for your medical data and privacy.
-              </CardDescription>
-            </CardContent>
-          </Card>
+            <div className="grid md:grid-cols-3 gap-8">
+              <Card className="card-healthcare group hover:shadow-2xl transition-all duration-500 border-2 hover:border-brand-green/50 hover:-translate-y-3 overflow-hidden relative cursor-pointer">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="text-center pb-4 relative z-10">
+                  <div className="mx-auto w-16 h-16 bg-brand-green/10 rounded-2xl flex items-center justify-center group-hover:bg-brand-green/20 transition-all duration-500 mb-4 group-hover:scale-110 group-hover:rotate-6">
+                    <Shield className="h-8 w-8 text-brand-green group-hover:animate-pulse" />
+                  </div>
+                  <CardTitle className="font-heading text-xl group-hover:text-brand-green transition-colors duration-300">Secure & Compliant</CardTitle>
+                  <div className="w-12 h-0.5 bg-brand-green/30 mx-auto mt-2 group-hover:w-20 transition-all duration-300"></div>
+                </CardHeader>
+                <CardContent className="relative z-10">
+                  <CardDescription className="text-base group-hover:text-foreground/80 transition-colors duration-300">
+                    POPIA compliant platform with end-to-end encryption for your medical data and privacy.
+                  </CardDescription>
+                </CardContent>
+              </Card>
 
-          <Card className="card-healthcare">
-            <CardHeader>
-              <div className="flex items-center space-x-2">
-                <Users className="h-6 w-6 text-brand-red" />
-                <CardTitle className="font-heading">Expert Care</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Specialized hormone health doctors with years of experience in women&apos;s health and menopause care.
-              </CardDescription>
-            </CardContent>
-          </Card>
+              <Card className="card-healthcare group hover:shadow-2xl transition-all duration-500 border-2 hover:border-brand-blue/50 hover:-translate-y-3 overflow-hidden relative cursor-pointer">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="text-center pb-4 relative z-10">
+                  <div className="mx-auto w-16 h-16 bg-brand-blue/10 rounded-2xl flex items-center justify-center group-hover:bg-brand-blue/20 transition-all duration-500 mb-4 group-hover:scale-110 group-hover:rotate-6">
+                    <Stethoscope className="h-8 w-8 text-brand-blue group-hover:animate-bounce" />
+                  </div>
+                  <CardTitle className="font-heading text-xl group-hover:text-brand-blue transition-colors duration-300">Expert Care</CardTitle>
+                  <div className="w-12 h-0.5 bg-brand-blue/30 mx-auto mt-2 group-hover:w-20 transition-all duration-300"></div>
+                </CardHeader>
+                <CardContent className="relative z-10">
+                  <CardDescription className="text-base group-hover:text-foreground/80 transition-colors duration-300">
+                    Specialized hormone health doctors with years of experience in women&apos;s health and menopause care.
+                  </CardDescription>
+                </CardContent>
+              </Card>
 
-          <Card className="card-healthcare">
-            <CardHeader>
-              <div className="flex items-center space-x-2">
-                <Users className="h-6 w-6 text-brand-blue" />
-                <CardTitle className="font-heading">Medical Aid Friendly</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>
-                Optimized for South African medical aid schemes with streamlined billing and validation processes.
-              </CardDescription>
-            </CardContent>
-          </Card>
+              <Card className="card-healthcare group hover:shadow-2xl transition-all duration-500 border-2 hover:border-brand-amber/50 hover:-translate-y-3 overflow-hidden relative cursor-pointer">
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-amber/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="text-center pb-4 relative z-10">
+                  <div className="mx-auto w-16 h-16 bg-brand-amber/10 rounded-2xl flex items-center justify-center group-hover:bg-brand-amber/20 transition-all duration-500 mb-4 group-hover:scale-110 group-hover:rotate-6">
+                    <CreditCard className="h-8 w-8 text-brand-amber group-hover:animate-spin" />
+                  </div>
+                  <CardTitle className="font-heading text-xl group-hover:text-brand-amber transition-colors duration-300">Medical Aid Friendly</CardTitle>
+                  <div className="w-12 h-0.5 bg-brand-amber/30 mx-auto mt-2 group-hover:w-20 transition-all duration-300"></div>
+                </CardHeader>
+                <CardContent className="relative z-10">
+                  <CardDescription className="text-base group-hover:text-foreground/80 transition-colors duration-300">
+                    Optimized for South African medical aid schemes with streamlined billing and validation processes.
+                  </CardDescription>
+                </CardContent>
+              </Card>
             </div>
           </section>
 
@@ -314,13 +339,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 mt-16 border-t border-brand-green/20">
-        <div className="text-center text-sm text-brand-green">
-          <p>© 2025 HHWH Online Clinic. Built with AI-assisted development.</p>
-          <p className="mt-2">Prototype Phase - Not for production use</p>
-        </div>
-      </footer>
     </div>
   );
 }

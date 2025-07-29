@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Calendar, Clock, User, CreditCard, Shield, AlertCircle } from 'lucide-react'
+import { LoadingScreen } from '@/components/ui/loading'
 import Link from 'next/link'
 import { appointmentBookingSchema, AppointmentBooking } from '@/lib/validations/patient'
 import { getAllDoctors, generateTimeSlots, formatCurrency } from '@/lib/supabase/doctors'
@@ -55,6 +56,22 @@ export default function BookAppointmentPage() {
 
   const watchedDoctorId = watch('doctor_id')
   const watchedDate = watch('appointment_date')
+  const watchedTime = watch('appointment_time')
+
+  // Check availability when time slot is selected
+  const checkTimeSlotAvailability = async (doctorId: string, date: string, time: string) => {
+    if (!doctorId || !date || !time) return true
+    
+    try {
+      const isAvailable = await import('@/lib/supabase/appointments').then(module => 
+        module.checkTimeSlotAvailability(doctorId, date, time)
+      )
+      return !isAvailable // checkTimeSlotAvailability returns true if slot is taken
+    } catch (error) {
+      console.error('Error checking availability:', error)
+      return true // Assume available on error to avoid blocking
+    }
+  }
 
   // Set email from authenticated user and load doctors
   useEffect(() => {
@@ -180,8 +197,58 @@ export default function BookAppointmentPage() {
       }
     } catch (error) {
       console.error('Failed to book appointment:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Failed to book appointment. Please try again.'
-      alert(errorMessage)
+      
+      let errorMessage = 'Failed to book appointment. Please try again.'
+      let errorTitle = 'Booking Failed'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('time slot is no longer available')) {
+          errorTitle = 'Time Slot Unavailable'
+          errorMessage = 'This time slot was just booked by another patient. Please select a different time or date.'
+        } else if (error.message.includes('Patient not found')) {
+          errorTitle = 'Registration Required'
+          errorMessage = 'Please complete your patient registration before booking an appointment.'
+        } else if (error.message.includes('Doctor not found')) {
+          errorTitle = 'Doctor Unavailable'
+          errorMessage = 'The selected doctor is currently unavailable. Please choose a different doctor.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      // Show user-friendly error notification
+      const errorDiv = document.createElement('div')
+      errorDiv.className = 'fixed top-4 right-4 bg-red-50 border-l-4 border-red-400 p-4 rounded-md shadow-lg z-50 max-w-md'
+      errorDiv.innerHTML = `
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">${errorTitle}</h3>
+            <p class="mt-1 text-sm text-red-700">${errorMessage}</p>
+          </div>
+          <div class="ml-auto pl-3">
+            <button onclick="this.parentElement.parentElement.remove()" class="text-red-400 hover:text-red-600">
+              <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      `
+      
+      document.body.appendChild(errorDiv)
+      
+      // Auto remove after 8 seconds
+      setTimeout(() => {
+        if (errorDiv.parentNode) {
+          errorDiv.remove()
+        }
+      }, 8000)
+      
     } finally {
       setIsSubmitting(false)
     }
@@ -261,14 +328,10 @@ export default function BookAppointmentPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-brand-pink/30 via-white to-brand-blue-light/20 flex items-center justify-center">
-        <Card className="w-full max-w-md text-center">
-          <CardContent className="p-6">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange mx-auto mb-4"></div>
-            <p>Loading...</p>
-          </CardContent>
-        </Card>
-      </div>
+      <LoadingScreen
+        title="Loading Appointment Booking"
+        subtitle="Preparing doctors and available slots..."
+      />
     )
   }
 
@@ -464,9 +527,9 @@ export default function BookAppointmentPage() {
       {/* Header */}
       <header className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
-          <Link href="/patient" className="flex items-center space-x-2">
+          <Link href="/patient/dashboard" className="flex items-center space-x-2">
             <ArrowLeft className="h-5 w-5" />
-            <span className="font-medium">Back to Patient Portal</span>
+            <span className="font-medium">Back to Dashboard</span>
           </Link>
           <Badge variant="outline" className="text-brand-purple">
             Book Appointment

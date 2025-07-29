@@ -36,13 +36,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [doctorProfile, setDoctorProfile] = useState<any | null>(null)
+  const [isProcessingAuthChange, setIsProcessingAuthChange] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  // Helper function to clear all cached profile data
+  const clearCachedData = () => {
+    setDoctorProfile(null)
+    // Add any other role-specific cached data clearing here
+  }
 
   // Helper function to get user role and profile
   const getUserRoleAndProfile = async (user: User) => {
     const role = user.user_metadata?.role as UserRole || 'patient'
     setUserRole(role)
+    
+    // Clear any existing cached profiles when role changes
+    setDoctorProfile(null)
     
     if (role === 'doctor') {
       // Get doctor profile
@@ -64,6 +74,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Helper function for role-based redirects
   const handleAuthRedirect = async (event: string, session: Session | null) => {
     if (event === 'SIGNED_IN' && session?.user) {
+      // Don't redirect if user is actively in registration process
+      const currentPath = window.location.pathname
+      const isInRegistration = currentPath.includes('/register') || 
+                               currentPath.includes('/patient/register') ||
+                               currentPath.includes('/doctor/register') ||
+                               currentPath.includes('/admin/register')
+      
+      if (isInRegistration) {
+        console.log('User is in registration, skipping auto-redirect')
+        return
+      }
+      
       const role = session.user.user_metadata?.role as UserRole || 'patient'
       
       switch (role) {
@@ -87,17 +109,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
-      
-      if (session?.user) {
-        const authUser = await getUserRoleAndProfile(session.user)
-        setUser(authUser)
-      } else {
-        setUser(null)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setSession(session)
+        
+        if (session?.user) {
+          // Clear any cached data before getting profile
+          clearCachedData()
+          const authUser = await getUserRoleAndProfile(session.user)
+          setUser(authUser)
+        } else {
+          setUser(null)
+          setUserRole(null)
+          clearCachedData()
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error)
+      } finally {
+        setLoading(false)
       }
-      
-      setLoading(false)
     }
 
     getInitialSession()
@@ -105,25 +135,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
-        setSession(session)
-        
-        if (session?.user) {
-          const authUser = await getUserRoleAndProfile(session.user)
-          setUser(authUser)
-        } else {
-          setUser(null)
-          setUserRole(null)
-          setDoctorProfile(null)
+        // Prevent overlapping auth state changes
+        if (isProcessingAuthChange) {
+          console.log('Auth state change already in progress, skipping...')
+          return
         }
         
-        await handleAuthRedirect(event, session)
-        setLoading(false)
+        setIsProcessingAuthChange(true)
+        console.log('Auth state changed:', event, session?.user?.email)
+        
+        try {
+          setSession(session)
+          
+          if (session?.user) {
+            // Clear any cached data before getting new profile
+            clearCachedData()
+            const authUser = await getUserRoleAndProfile(session.user)
+            setUser(authUser)
+          } else {
+            setUser(null)
+            setUserRole(null)
+            clearCachedData()
+          }
+          
+          await handleAuthRedirect(event, session)
+        } catch (error) {
+          console.error('Error processing auth state change:', error)
+        } finally {
+          setIsProcessingAuthChange(false)
+          setLoading(false)
+        }
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [router, supabase.auth])
+  }, [router, supabase.auth, isProcessingAuthChange])
 
   const signUp = async (email: string, password: string, userData?: any) => {
     try {
@@ -168,6 +214,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    // Clear all cached data before signing out
+    clearCachedData()
+    setUser(null)
+    setUserRole(null)
+    setSession(null)
+    
     await supabase.auth.signOut()
   }
 
@@ -185,7 +237,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getDoctorProfile = async () => {
     if (!user || userRole !== 'doctor') return null
     
-    if (doctorProfile) return doctorProfile
+    // Validate cached profile matches current user
+    if (doctorProfile && doctorProfile.user_id === user.id) {
+      return doctorProfile
+    }
+    
+    // Clear any stale cached data and fetch fresh profile
+    setDoctorProfile(null)
     
     const { data: doctor, error } = await supabase
       .from('doctors')
