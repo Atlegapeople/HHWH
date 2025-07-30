@@ -28,7 +28,10 @@ import {
   Home,
   Info,
   Stethoscope,
-  UserCircle
+  UserCircle,
+  Users,
+  UserCheck,
+  BarChart3
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -37,7 +40,7 @@ import { useRouter, usePathname } from 'next/navigation'
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null)
-  const { user, signOut, loading } = useAuth()
+  const { user, signOut, loading, userRole, isDoctor } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -127,6 +130,18 @@ export default function Navbar() {
       return email.slice(0, 2).toUpperCase()
     }
     return 'U'
+  }
+
+  const getDashboardUrl = () => {
+    switch (userRole) {
+      case 'doctor':
+        return '/doctor/dashboard'
+      case 'admin':
+        return '/admin/dashboard'
+      case 'patient':
+      default:
+        return '/patient/dashboard'
+    }
   }
 
   return (
@@ -253,29 +268,73 @@ export default function Navbar() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="my-2" />
                   <DropdownMenuItem asChild>
-                    <Link href="/patient/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                    <Link href={getDashboardUrl()} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#217B82]/10">
                         <User className="h-4 w-4 text-[#217B82]" />
                       </div>
                       <span className="font-medium">Dashboard</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/patient/book-appointment" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
-                        <Calendar className="h-4 w-4 text-green-600" />
-                      </div>
-                      <span className="font-medium">Book Appointment</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/patient/assessment" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
-                        <Activity className="h-4 w-4 text-purple-600" />
-                      </div>
-                      <span className="font-medium">Health Assessment</span>
-                    </Link>
-                  </DropdownMenuItem>
+                  {userRole === 'patient' && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/patient/book-appointment" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
+                            <Calendar className="h-4 w-4 text-green-600" />
+                          </div>
+                          <span className="font-medium">Book Appointment</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/patient/assessment" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
+                            <Activity className="h-4 w-4 text-purple-600" />
+                          </div>
+                          <span className="font-medium">Health Assessment</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {userRole === 'doctor' && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/doctor/appointments" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
+                            <Calendar className="h-4 w-4 text-green-600" />
+                          </div>
+                          <span className="font-medium">Appointments</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/doctor/patients" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
+                            <Users className="h-4 w-4 text-purple-600" />
+                          </div>
+                          <span className="font-medium">Patients</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {userRole === 'admin' && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/doctors" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
+                            <UserCheck className="h-4 w-4 text-green-600" />
+                          </div>
+                          <span className="font-medium">Doctor Applications</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/analytics" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
+                            <BarChart3 className="h-4 w-4 text-purple-600" />
+                          </div>
+                          <span className="font-medium">Analytics</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link href="/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-500/10">
@@ -398,29 +457,73 @@ export default function Navbar() {
                     </div>
                     <div className="space-y-2">
                       <Link 
-                        href="/patient/dashboard"
+                        href={getDashboardUrl()}
                         className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         <User className="h-4 w-4" />
                         <span>Dashboard</span>
                       </Link>
-                      <Link 
-                        href="/patient/book-appointment"
-                        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <Calendar className="h-4 w-4" />
-                        <span>Book Appointment</span>
-                      </Link>
-                      <Link 
-                        href="/patient/assessment"
-                        className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <Activity className="h-4 w-4" />
-                        <span>Health Assessment</span>
-                      </Link>
+                      {userRole === 'patient' && (
+                        <>
+                          <Link 
+                            href="/patient/book-appointment"
+                            className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <Calendar className="h-4 w-4" />
+                            <span>Book Appointment</span>
+                          </Link>
+                          <Link 
+                            href="/patient/assessment"
+                            className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <Activity className="h-4 w-4" />
+                            <span>Health Assessment</span>
+                          </Link>
+                        </>
+                      )}
+                      {userRole === 'doctor' && (
+                        <>
+                          <Link 
+                            href="/doctor/appointments"
+                            className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <Calendar className="h-4 w-4" />
+                            <span>Appointments</span>
+                          </Link>
+                          <Link 
+                            href="/doctor/patients"
+                            className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <Users className="h-4 w-4" />
+                            <span>Patients</span>
+                          </Link>
+                        </>
+                      )}
+                      {userRole === 'admin' && (
+                        <>
+                          <Link 
+                            href="/admin/doctors"
+                            className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <UserCheck className="h-4 w-4" />
+                            <span>Doctor Applications</span>
+                          </Link>
+                          <Link 
+                            href="/admin/analytics"
+                            className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <BarChart3 className="h-4 w-4" />
+                            <span>Analytics</span>
+                          </Link>
+                        </>
+                      )}
                       <Button
                         onClick={() => {
                           handleSignOut()
