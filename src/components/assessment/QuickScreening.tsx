@@ -511,28 +511,35 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
                       >
                         {currentQuestion.options?.map((option) => (
                           <div key={option.value} className="relative">
-                            <input
-                              type="radio"
-                              value={option.value}
-                              id={option.value}
-                              className="sr-only peer"
-                              {...field}
-                              checked={field.value === option.value}
-                              onChange={() => field.onChange(option.value)}
-                            />
                             <Label 
-                              className="flex items-center w-full p-4 rounded-xl border-2 border-gray-200 cursor-pointer transition-all duration-200 hover:border-brand-green/40 hover:bg-brand-green/5 peer-checked:border-brand-green peer-checked:bg-gradient-to-r peer-checked:from-brand-green/10 peer-checked:to-brand-blue/10 peer-checked:shadow-lg peer-checked:scale-[1.02]" 
+                              className={`flex items-center w-full p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:border-brand-green/40 hover:bg-brand-green/5 ${
+                                field.value === option.value 
+                                  ? 'border-brand-green bg-gradient-to-r from-brand-green/10 to-brand-blue/10 shadow-lg scale-[1.02]' 
+                                  : 'border-gray-200'
+                              }`}
                               htmlFor={option.value}
+                              onClick={() => field.onChange(option.value)}
                             >
                               <div className="flex items-center space-x-4 w-full">
-                                <div className="w-5 h-5 border-2 border-gray-300 rounded-full flex items-center justify-center peer-checked:border-brand-green peer-checked:bg-brand-green transition-all duration-200">
-                                  <div className="w-2 h-2 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity duration-200" />
+                                <div className={`w-5 h-5 border-2 rounded-full flex items-center justify-center transition-all duration-200 ${
+                                  field.value === option.value 
+                                    ? 'border-brand-green bg-brand-green' 
+                                    : 'border-gray-300'
+                                }`}>
+                                  <div className={`w-2 h-2 bg-white rounded-full transition-opacity duration-200 ${
+                                    field.value === option.value ? 'opacity-100' : 'opacity-0'
+                                  }`} />
                                 </div>
                                 <span className="flex-1 text-sm md:text-base font-medium text-foreground leading-relaxed">
                                   {option.label}
                                 </span>
                               </div>
                             </Label>
+                            <RadioGroupItem 
+                              value={option.value} 
+                              id={option.value} 
+                              className="sr-only" 
+                            />
                           </div>
                         ))}
                       </RadioGroup>
