@@ -550,12 +550,8 @@ export default function PatientDashboardPage() {
             onClick={() => {
               // If user is authenticated, allow navigation (even if patientData is still loading)
               if (user || patientData) {
-                // If there are assessments, navigate to latest results, otherwise to new assessment
-                if (assessments.length > 0) {
-                  router.push(`/patient/assessment/results/${assessments[0].id}`);
-                } else {
-                  router.push("/patient/assessment");
-                }
+                // Always navigate to assessment selection page to choose between quick and full assessment
+                router.push("/patient/assessment");
               } else {
                 showToast(
                   "Please complete your patient registration first to access the health assessment.",
@@ -579,7 +575,7 @@ export default function PatientDashboardPage() {
                   </div>
                   
                   <h3 className="text-xl font-semibold mb-4 text-foreground">
-                    {assessments.length > 0 ? 'Latest Assessment' : 'Health Assessment'}
+                    {assessments.length > 0 ? 'Assessment Center' : 'Health Assessment'}
                   </h3>
                 
                 {assessments.length > 0 ? (
@@ -628,15 +624,15 @@ export default function PatientDashboardPage() {
                     
                     <p className="text-muted-foreground text-sm leading-relaxed">
                       {assessments.length > 1 
-                        ? `You have ${assessments.length} assessments completed. Track your progress over time.`
-                        : 'Your hormone health assessment results. Take a new assessment to track changes.'
+                        ? `You have ${assessments.length} assessments completed. Choose from quick screening or comprehensive assessment options.`
+                        : 'Your latest assessment results. Choose from quick screening or comprehensive assessment options.'
                       }
                     </p>
                   </div>
                 ) : (
                   // Show assessment prompt for new users
                   <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-                    Complete our comprehensive 65-point hormone health assessment for personalized treatment recommendations
+                    Choose from a quick 5-minute screening or comprehensive 65-point assessment for personalized treatment recommendations
                   </p>
                 )}
                 </div>
@@ -675,7 +671,7 @@ export default function PatientDashboardPage() {
                       </>
                     ) : (
                       <Button className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white shadow-sm cursor-pointer">
-                        Start Assessment
+                        Choose Assessment Type
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </Button>
                     )}
@@ -1358,12 +1354,12 @@ export default function PatientDashboardPage() {
                         <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <h3 className="font-semibold mb-2">No Assessments Yet</h3>
                         <p className="text-muted-foreground mb-4">
-                          Complete your first hormone health assessment to track your symptoms
+                          Choose from quick screening or comprehensive assessment to track your symptoms
                         </p>
                         <Link href="/patient/assessment">
                           <Button className="btn-healthcare-primary">
                             <Activity className="h-4 w-4 mr-2" />
-                            Start Assessment
+                            Choose Assessment Type
                           </Button>
                         </Link>
                       </div>
