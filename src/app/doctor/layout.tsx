@@ -205,7 +205,7 @@ export default function DoctorLayout({ children }: DoctorLayoutProps) {
                   const Icon = item.icon
                   
                   return (
-                    <Link key={item.name} href={item.href}>
+                    <Link key={item.name} href={item.href} onClick={() => setSidebarOpen(false)}>
                       <div className={`group relative overflow-hidden rounded-xl transition-all duration-300 ${
                         isActive 
                           ? 'bg-gradient-to-r from-brand-blue to-brand-green shadow-lg shadow-brand-blue/25' 

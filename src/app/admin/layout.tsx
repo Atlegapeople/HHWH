@@ -116,7 +116,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     const Icon = item.icon
                     
                     return (
-                      <Link key={item.name} href={item.href}>
+                      <Link key={item.name} href={item.href} onClick={() => setSidebarOpen(false)}>
                         <div className={`group relative overflow-hidden rounded-xl transition-all duration-300 ${
                           isActive 
                             ? 'bg-gradient-to-r from-brand-red to-brand-red shadow-lg shadow-brand-red/25' 
