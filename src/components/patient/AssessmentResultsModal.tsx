@@ -109,7 +109,6 @@ export default function AssessmentResultsModal({ assessmentId, trigger }: Assess
   const scores = isQuickScreening 
     ? assessmentResult.assessment_data.results.scores 
     : calculateAssessmentScores(assessmentResult.assessment_data)
-  const badgeConfig = getSeverityBadge(assessmentResult.severity_level)
   const recommendations = assessmentResult.recommendations || generateRecommendations(assessmentResult.assessment_data, scores)
 
   return (
@@ -142,7 +141,7 @@ export default function AssessmentResultsModal({ assessmentId, trigger }: Assess
                 </div>
                 <Badge 
                   variant="outline" 
-                  className={`${badgeConfig.className} capitalize text-xs`}
+                  className={`${getSeverityBadge(assessmentResult.severity_level).className} capitalize text-xs`}
                 >
                   {assessmentResult.severity_level.replace('_', ' ')} Impact
                 </Badge>

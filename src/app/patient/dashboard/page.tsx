@@ -493,7 +493,12 @@ export default function PatientDashboardPage() {
                               {formatAssessmentDate(latestAssessment.completed_at)}
                             </p>
                           </div>
-                          {getSeverityBadge(latestAssessment.severity_level)}
+                          <Badge 
+                            variant="outline" 
+                            className={getSeverityBadge(latestAssessment.severity_level).className}
+                          >
+                            {latestAssessment.severity_level.replace('_', ' ')} Impact
+                          </Badge>
                         </div>
                         
                         <div className="bg-white/80 rounded-lg p-4 space-y-3">
@@ -747,8 +752,6 @@ export default function PatientDashboardPage() {
                     {(() => {
                       const latestAssessment = assessments[0] // Most recent assessment
                       const scores = calculateAssessmentScores(latestAssessment.assessment_data)
-                      const badgeConfig = getSeverityBadge(latestAssessment.severity_level)
-                      
                       return (
                         <div className="rounded-lg border border-brand-gray/20 bg-white/80 p-4 mb-4 space-y-4 shadow-sm">
                           <div className="flex items-center justify-between">
@@ -757,7 +760,7 @@ export default function PatientDashboardPage() {
                             </div>
                             <Badge 
                               variant="outline" 
-                              className={`${badgeConfig.className} capitalize text-xs`}
+                              className={`${getSeverityBadge(latestAssessment.severity_level).className} capitalize text-xs`}
                             >
                               {latestAssessment.severity_level.replace('_', ' ')} Impact
                             </Badge>
@@ -1368,7 +1371,6 @@ export default function PatientDashboardPage() {
                         {/* Latest Assessment - Expanded */}
                         {(() => {
                           const latestAssessment = assessments[0]
-                          const badgeConfig = getSeverityBadge(latestAssessment.severity_level)
                           const scores = latestAssessment.assessment_data ? calculateAssessmentScores(latestAssessment.assessment_data) : null
                           return (
                             <div className="rounded-xl border border-brand-purple/30 bg-white/90 p-6 shadow-sm">
@@ -1394,7 +1396,7 @@ export default function PatientDashboardPage() {
                                 </div>
                                 <Badge 
                                   variant="outline" 
-                                  className={`${badgeConfig.className} capitalize`}
+                                  className={`${getSeverityBadge(latestAssessment.severity_level).className} capitalize`}
                                 >
                                   {latestAssessment.severity_level.replace('_', ' ')} Impact
                                 </Badge>
@@ -1468,7 +1470,6 @@ export default function PatientDashboardPage() {
                               Previous Assessments ({assessments.length - 1})
                             </h5>
                             {assessments.slice(1, 4).map((assessment, index) => {
-                              const badgeConfig = getSeverityBadge(assessment.severity_level)
                               return (
                                 <div key={assessment.id} className="rounded-lg border border-brand-gray/20 bg-white/70 p-4 hover:shadow-md transition-shadow">
                                   <div className="flex items-center justify-between">
@@ -1488,7 +1489,7 @@ export default function PatientDashboardPage() {
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                       <Badge 
                                         variant="outline" 
-                                        className={`${badgeConfig.className} capitalize text-xs`}
+                                        className={`${getSeverityBadge(assessment.severity_level).className} capitalize text-xs`}
                                       >
                                         {assessment.severity_level.replace('_', ' ')}
                                       </Badge>
