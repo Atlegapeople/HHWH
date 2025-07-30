@@ -189,42 +189,92 @@ export default function PackageSelectionPage() {
           </div>
           <Progress value={progressPercentage} className="h-2" />
           
-          {/* Step indicators */}
-          <div className="grid grid-cols-4 gap-4 mt-6">
-            {steps.map((step, index) => (
-              <div 
-                key={step.id}
-                className={`text-center p-3 rounded-lg border transition-all duration-300 ${
-                  index === currentStep 
-                    ? 'border-brand-green bg-brand-green/10' 
-                    : index < currentStep 
-                    ? 'border-brand-green/30 bg-brand-green/5'
-                    : 'border-gray-200 bg-gray-50'
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${
-                  step.completed 
-                    ? 'bg-brand-green text-white' 
-                    : index === currentStep
-                    ? 'bg-brand-green/20 text-brand-green border-2 border-brand-green'
-                    : 'bg-gray-200 text-gray-500'
-                }`}>
-                  {step.completed ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <span className="text-sm font-bold">{index + 1}</span>
+          {/* Step indicators - Mobile Optimized */}
+          <div className="mt-6">
+            {/* Mobile View - Vertical Stack */}
+            <div className="block md:hidden space-y-3">
+              {steps.map((step, index) => (
+                <div 
+                  key={step.id}
+                  className={`flex items-center p-4 rounded-lg border transition-all duration-300 ${
+                    index === currentStep 
+                      ? 'border-brand-green bg-brand-green/10' 
+                      : index < currentStep 
+                      ? 'border-brand-green/30 bg-brand-green/5'
+                      : 'border-gray-200 bg-gray-50'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0 ${
+                    step.completed 
+                      ? 'bg-brand-green text-white' 
+                      : index === currentStep
+                      ? 'bg-brand-green/20 text-brand-green border-2 border-brand-green'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {step.completed ? (
+                      <CheckCircle className="h-5 w-5" />
+                    ) : (
+                      <span className="text-sm font-bold">{index + 1}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`text-base font-medium ${
+                      index <= currentStep ? 'text-foreground' : 'text-muted-foreground'
+                    }`}>
+                      {step.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {step.description}
+                    </p>
+                  </div>
+                  {index === currentStep && (
+                    <div className="ml-3">
+                      <Badge className="bg-brand-green text-white text-xs">
+                        Current
+                      </Badge>
+                    </div>
                   )}
                 </div>
-                <h3 className={`text-sm font-medium ${
-                  index <= currentStep ? 'text-foreground' : 'text-muted-foreground'
-                }`}>
-                  {step.title}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {step.description}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* Desktop View - Horizontal Grid */}
+            <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {steps.map((step, index) => (
+                <div 
+                  key={step.id}
+                  className={`text-center p-4 rounded-lg border transition-all duration-300 ${
+                    index === currentStep 
+                      ? 'border-brand-green bg-brand-green/10' 
+                      : index < currentStep 
+                      ? 'border-brand-green/30 bg-brand-green/5'
+                      : 'border-gray-200 bg-gray-50'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 ${
+                    step.completed 
+                      ? 'bg-brand-green text-white' 
+                      : index === currentStep
+                      ? 'bg-brand-green/20 text-brand-green border-2 border-brand-green'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {step.completed ? (
+                      <CheckCircle className="h-5 w-5" />
+                    ) : (
+                      <span className="text-sm font-bold">{index + 1}</span>
+                    )}
+                  </div>
+                  <h3 className={`text-sm font-medium mb-1 ${
+                    index <= currentStep ? 'text-foreground' : 'text-muted-foreground'
+                  }`}>
+                    {step.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {step.description}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

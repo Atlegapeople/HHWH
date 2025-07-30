@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'X-Frame-Options',
-            value: 'DENY'
+            value: 'SAMEORIGIN'
           },
           {
             key: 'X-Content-Type-Options',
@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()'
+            value: 'camera=(self https://meet.jit.si https://*.jitsi.net), microphone=(self https://meet.jit.si https://*.jitsi.net), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()'
           },
           {
             key: 'Strict-Transport-Security',
@@ -47,13 +47,13 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel.app https://*.supabase.co https://*.paystack.co https://*.googleapis.com https://*.gstatic.com https://js.paystack.co",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://*.supabase.co https://*.vercel.app https://*.paystack.co",
-              "connect-src 'self' https://*.supabase.co https://*.vercel.app https://*.paystack.co wss://*.supabase.co",
-              "media-src 'self' https://*.supabase.co",
-              "frame-src 'none'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel.app https://*.supabase.co https://*.paystack.co https://*.googleapis.com https://*.gstatic.com https://js.paystack.co https://meet.jit.si https://*.jitsi.net",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://meet.jit.si https://*.jitsi.net",
+              "font-src 'self' https://fonts.gstatic.com https://meet.jit.si https://*.jitsi.net",
+              "img-src 'self' data: blob: https://*.supabase.co https://*.vercel.app https://*.paystack.co https://meet.jit.si https://*.jitsi.net",
+              "connect-src 'self' https://*.supabase.co https://*.vercel.app https://*.paystack.co wss://*.supabase.co https://meet.jit.si https://*.jitsi.net wss://meet.jit.si wss://*.jitsi.net",
+              "media-src 'self' https://*.supabase.co https://meet.jit.si https://*.jitsi.net",
+              "frame-src 'self' https://meet.jit.si https://*.jitsi.net",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self' https://*.paystack.co"
