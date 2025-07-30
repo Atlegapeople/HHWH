@@ -53,7 +53,7 @@ function SymptomAssessmentContent() {
   const searchParams = useSearchParams()
   const [currentStep, setCurrentStep] = useState(1)
   const [patientEmail, setPatientEmail] = useState('')
-  const [showEmailInput, setShowEmailInput] = useState(true)
+  const [showEmailInput, setShowEmailInput] = useState(true) // Will be updated in useEffect
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
   const [assessmentResult, setAssessmentResult] = useState<any>(null)
@@ -146,11 +146,17 @@ function SymptomAssessmentContent() {
 
   const { handleSubmit, trigger, formState: { errors } } = form
 
-  // Auto-populate email for authenticated users but still show explanation screen
+  // Auto-populate email for authenticated users and skip email input
   useEffect(() => {
-    if (!authLoading && user?.email) {
-      setPatientEmail(user.email)
-      // Keep showEmailInput true to show explanation screen, but email will be pre-filled
+    if (!authLoading) {
+      if (user?.email) {
+        setPatientEmail(user.email)
+        setShowEmailInput(false) // Skip email input for authenticated users
+        console.log('Authenticated user detected, skipping email input')
+      } else {
+        setShowEmailInput(true) // Show email input for non-authenticated users
+        console.log('Non-authenticated user, showing email input')
+      }
     }
   }, [user, authLoading])
 
@@ -298,8 +304,8 @@ function SymptomAssessmentContent() {
     )
   }
 
-  // Email input screen
-  if (showEmailInput) {
+  // Email input screen - only for non-authenticated users
+  if (showEmailInput && !user?.email) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-brand-pink/10 via-white to-brand-blue-light/15">
         <header className="container mx-auto px-4 py-6">
