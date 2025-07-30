@@ -19,6 +19,7 @@ import Link from 'next/link'
 import { SymptomAssessment, symptomAssessmentSchema } from '@/lib/validations/patient'
 import { scrollToTop } from '@/lib/utils'
 import { createAssessment, calculateAssessmentScores, formatAssessmentDate, getAssessmentById } from '@/lib/supabase/assessments'
+import QuickScreening from '@/components/assessment/QuickScreening'
 import { getCurrentUserPatient } from '@/lib/supabase/patients'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -60,6 +61,7 @@ function SymptomAssessmentContent() {
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null)
   const [isViewingResults, setIsViewingResults] = useState(false)
   const [loadingResults, setLoadingResults] = useState(false)
+  const [assessmentType, setAssessmentType] = useState<'quick' | 'full' | null>(null)
 
   // Function to calculate age from date of birth
   const calculateAge = (dateOfBirth: string): number => {
@@ -523,6 +525,164 @@ function SymptomAssessmentContent() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    )
+  }
+
+  // Assessment Type Selection Screen
+  if (!assessmentType) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-brand-pink/10 via-white to-brand-blue-light/15">
+        <div className="container mx-auto px-6 py-12">
+          <div className="max-w-4xl mx-auto text-center mb-12">
+            <h1 className="text-4xl font-heading font-bold text-foreground mb-4">
+              Choose Your Assessment Type
+            </h1>
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              Select the assessment that best fits your needs and available time
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Quick Screening */}
+            <Card className="relative border-2 border-brand-green/20 hover:border-brand-green/40 transition-all duration-300 hover:shadow-xl cursor-pointer group" onClick={() => setAssessmentType('quick')}>
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <Badge className="bg-brand-green text-white px-4 py-1">Recommended</Badge>
+              </div>
+              <CardHeader className="pb-6">
+                <div className="bg-brand-green/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Activity className="h-8 w-8 text-brand-green" />
+                </div>
+                <CardTitle className="text-2xl font-heading">Quick Screening</CardTitle>
+                <CardDescription className="text-base">
+                  Essential questions to identify your hormone health stage and urgent needs
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-brand-green/5 rounded-lg">
+                  <span className="text-sm font-medium">Duration:</span>
+                  <span className="text-brand-green font-semibold">3-5 minutes</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-brand-green/5 rounded-lg">
+                  <span className="text-sm font-medium">Questions:</span>
+                  <span className="text-brand-green font-semibold">8 core questions</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-brand-green/5 rounded-lg">
+                  <span className="text-sm font-medium">Best for:</span>
+                  <span className="text-brand-green font-semibold">First-time users</span>
+                </div>
+                <ul className="text-sm text-muted-foreground space-y-2 mt-4">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-brand-green flex-shrink-0" />
+                    Hormone stage identification
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-brand-green flex-shrink-0" />
+                    Symptom severity assessment
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-brand-green flex-shrink-0" />
+                    Immediate care recommendations
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-brand-green flex-shrink-0" />
+                    Package suggestions
+                  </li>
+                </ul>
+                <Button className="w-full btn-healthcare-primary mt-6 group-hover:shadow-lg transition-all" onClick={() => setAssessmentType('quick')}>
+                  Start Quick Screening
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Comprehensive Assessment */}
+            <Card className="border-2 border-brand-blue/20 hover:border-brand-blue/40 transition-all duration-300 hover:shadow-xl cursor-pointer group" onClick={() => setAssessmentType('full')}>
+              <CardHeader className="pb-6">
+                <div className="bg-brand-blue/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileText className="h-8 w-8 text-brand-blue" />
+                </div>
+                <CardTitle className="text-2xl font-heading">Comprehensive Assessment</CardTitle>
+                <CardDescription className="text-base">
+                  Detailed evaluation covering all aspects of hormone health and lifestyle factors
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-brand-blue/5 rounded-lg">
+                  <span className="text-sm font-medium">Duration:</span>
+                  <span className="text-brand-blue font-semibold">15-20 minutes</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-brand-blue/5 rounded-lg">
+                  <span className="text-sm font-medium">Questions:</span>
+                  <span className="text-brand-blue font-semibold">65+ detailed questions</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-brand-blue/5 rounded-lg">
+                  <span className="text-sm font-medium">Best for:</span>
+                  <span className="text-brand-blue font-semibold">Detailed analysis</span>
+                </div>
+                <ul className="text-sm text-muted-foreground space-y-2 mt-4">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-brand-blue flex-shrink-0" />
+                    Complete symptom mapping
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-brand-blue flex-shrink-0" />
+                    Risk factor analysis
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-brand-blue flex-shrink-0" />
+                    Personalized treatment plan
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-brand-blue flex-shrink-0" />
+                    Clinical recommendations
+                  </li>
+                </ul>
+                <Button variant="outline" className="w-full border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white mt-6 group-hover:shadow-lg transition-all" onClick={() => setAssessmentType('full')}>
+                  Start Comprehensive Assessment
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-sm text-muted-foreground mb-4">
+              Not sure which to choose? Start with the Quick Screening - you can always take the comprehensive assessment later.
+            </p>
+            <Link href="/patient/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Quick Screening Component
+  if (assessmentType === 'quick') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-brand-pink/10 via-white to-brand-blue-light/15">
+        <div className="container mx-auto px-6 py-12">
+          <div className="mb-8">
+            <Button 
+              variant="ghost" 
+              onClick={() => setAssessmentType(null)}
+              className="mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Assessment Options
+            </Button>
+          </div>
+          <QuickScreening 
+            patientEmail={patientEmail}
+            onComplete={(results) => {
+              console.log('Quick screening completed:', results)
+              // Could redirect to packages or dashboard based on results
+            }}
+          />
+        </div>
       </div>
     )
   }

@@ -14,11 +14,15 @@ import {
   Thermometer,
   Brain,
   Heart,
-  Calendar
+  Calendar,
+  Target,
+  Package,
+  TrendingUp,
+  Info
 } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { formatAssessmentDate, getSeverityBadge, calculateAssessmentScores } from '@/lib/supabase/assessments'
+import { formatAssessmentDate, getSeverityBadge, calculateAssessmentScores, recommendPackage } from '@/lib/supabase/assessments'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function AssessmentResultsPage() {
@@ -118,6 +122,7 @@ export default function AssessmentResultsPage() {
 
   const scores = assessment.assessment_data ? calculateAssessmentScores(assessment.assessment_data) : null
   const badgeConfig = getSeverityBadge(assessment.severity_level)
+  const packageRecommendation = scores ? recommendPackage(scores, true) : null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-pink/30 via-white to-brand-blue-light/20">
@@ -223,6 +228,139 @@ export default function AssessmentResultsPage() {
                   <div className="text-sm text-muted-foreground">Sexual Health</div>
                   <div className="text-xs text-muted-foreground mt-1">Libido, urogenital symptoms</div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Hormone Stage Assessment */}
+        {scores && (
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            {/* Hormone Stage */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-brand-purple" />
+                  Hormone Health Stage
+                </CardTitle>
+                <CardDescription>
+                  Based on your symptoms and menstrual patterns
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <div className="mb-4">
+                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-lg font-semibold ${
+                      scores.hormoneStage === 'premenopause' ? 'bg-brand-green/10 text-brand-green' :
+                      scores.hormoneStage === 'perimenopause' ? 'bg-brand-amber/10 text-brand-amber' :
+                      'bg-brand-purple/10 text-brand-purple'
+                    }`}>
+                      <TrendingUp className="h-5 w-5" />
+                      {scores.hormoneStage === 'premenopause' ? 'Premenopause' :
+                       scores.hormoneStage === 'perimenopause' ? 'Perimenopause' : 
+                       'Postmenopause'}
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-3">
+                    Confidence Level: {Math.round(scores.stageConfidence * 100)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">
+                    {scores.hormoneStage === 'premenopause' && 
+                      'Regular menstrual cycles with minimal hormonal symptoms. Focus on preventive care and lifestyle optimization.'}
+                    {scores.hormoneStage === 'perimenopause' && 
+                      'Transitional phase with fluctuating hormones. Active management recommended for symptom relief.'}
+                    {scores.hormoneStage === 'postmenopause' && 
+                      'Post-menopausal phase requiring long-term hormone health management and preventive care.'}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Package Recommendation */}
+            {packageRecommendation && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-brand-blue" />
+                    Recommended Care Package
+                  </CardTitle>
+                  <CardDescription>
+                    Personalized treatment plan based on your assessment
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold ${
+                        packageRecommendation.urgency === 'urgent' ? 'bg-brand-red/10 text-brand-red' :
+                        packageRecommendation.urgency === 'priority' ? 'bg-brand-amber/10 text-brand-amber' :
+                        'bg-brand-green/10 text-brand-green'
+                      }`}>
+                        <Info className="h-4 w-4" />
+                        {packageRecommendation.urgency === 'urgent' ? 'Urgent Care' :
+                         packageRecommendation.urgency === 'priority' ? 'Priority Care' : 
+                         'Routine Care'}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Recommended Package:</div>
+                      <div className="text-xs text-muted-foreground">
+                        {packageRecommendation.recommendedPackage === 'medical_aid' ? 
+                          'Medical Aid Package (R2,660)' : 'Cash Package (R2,400)'}
+                      </div>
+                    </div>
+
+                    {packageRecommendation.additionalServices.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">Recommended Add-ons:</div>
+                        <div className="space-y-1">
+                          {packageRecommendation.additionalServices.map((service, idx) => (
+                            <div key={idx} className="text-xs text-muted-foreground">
+                              • {service === 'dietitian_cgm' ? 'Dietitian + CGM (R1,200)' : 'Counsellor + DNAlysis (R1,500)'}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pt-3 border-t">
+                      <Link href="/patient/packages">
+                        <Button className="w-full btn-healthcare-primary" size="sm">
+                          <Package className="h-4 w-4 mr-2" />
+                          View Care Packages
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Clinical Reasoning */}
+        {packageRecommendation && packageRecommendation.reasoning.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5 text-brand-blue" />
+                Clinical Assessment Reasoning
+              </CardTitle>
+              <CardDescription>
+                Why these recommendations were made for your specific situation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {packageRecommendation.reasoning.map((reason, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 bg-brand-blue/5 rounded-lg">
+                    <div className="w-6 h-6 bg-brand-blue/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-medium text-brand-blue">{index + 1}</span>
+                    </div>
+                    <p className="text-sm text-gray-700">{reason}</p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

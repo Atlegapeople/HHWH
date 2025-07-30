@@ -63,7 +63,10 @@ export async function createAssessment(
   }
 }
 
-// Calculate assessment scores based on symptom severity
+// Hormone stage types based on clinical assessment
+export type HormoneStage = 'premenopause' | 'perimenopause' | 'postmenopause'
+
+// Calculate assessment scores and determine hormone stage
 export function calculateAssessmentScores(data: SymptomAssessment) {
   let totalScore = 0
   let vasomotorScore = 0
@@ -71,9 +74,10 @@ export function calculateAssessmentScores(data: SymptomAssessment) {
   let physicalScore = 0
   let sexualScore = 0
 
-  // Vasomotor symptoms (hot flashes, night sweats)
-  vasomotorScore += parseInt(data.hot_flashes_frequency) * parseInt(data.hot_flashes_severity)
-  vasomotorScore += parseInt(data.night_sweats_frequency) * parseInt(data.night_sweats_severity)
+  // Vasomotor symptoms (hot flashes, night sweats) - Higher weight for hormone stage determination
+  const hotFlashScore = parseInt(data.hot_flashes_frequency) * parseInt(data.hot_flashes_severity)
+  const nightSweatScore = parseInt(data.night_sweats_frequency) * parseInt(data.night_sweats_severity)
+  vasomotorScore = hotFlashScore + nightSweatScore
 
   // Psychological symptoms (mood, sleep, cognitive)
   psychologicalScore += parseInt(data.sleep_quality)
@@ -96,26 +100,27 @@ export function calculateAssessmentScores(data: SymptomAssessment) {
   physicalScore += parseInt(data.weight_gain)
   physicalScore += parseInt(data.bloating)
 
-  // Sexual/urogenital symptoms
-  sexualScore += parseInt(data.decreased_libido)
-  sexualScore += parseInt(data.vaginal_dryness)
-  sexualScore += parseInt(data.painful_intercourse)
-  sexualScore += parseInt(data.urinary_urgency)
-  sexualScore += parseInt(data.urinary_frequency)
+  // Sexual/urogenital symptoms - Important for stage determination
+  const libidoScore = parseInt(data.decreased_libido)
+  const drynessScore = parseInt(data.vaginal_dryness)
+  const painScore = parseInt(data.painful_intercourse)
+  const urinaryScore = parseInt(data.urinary_urgency) + parseInt(data.urinary_frequency)
+  sexualScore = libidoScore + drynessScore + painScore + urinaryScore
 
   totalScore = vasomotorScore + psychologicalScore + physicalScore + sexualScore
 
-  // Determine severity level based on scoring
-  let severityLevel: 'mild' | 'moderate' | 'severe' | 'very_severe'
-  if (totalScore <= 15) {
-    severityLevel = 'mild'
-  } else if (totalScore <= 30) {
-    severityLevel = 'moderate'
-  } else if (totalScore <= 45) {
-    severityLevel = 'severe'
-  } else {
-    severityLevel = 'very_severe'
-  }
+  // Determine hormone stage based on symptoms and menstrual status
+  const hormoneStage = determineHormoneStage(data, {
+    vasomotorScore,
+    sexualScore,
+    totalScore,
+    hotFlashScore,
+    nightSweatScore,
+    drynessScore
+  })
+
+  // Determine severity level within the stage
+  const severityLevel = determineSeverityLevel(totalScore, hormoneStage)
 
   return {
     totalScore,
@@ -123,7 +128,91 @@ export function calculateAssessmentScores(data: SymptomAssessment) {
     psychologicalScore,
     physicalScore,
     sexualScore,
-    severityLevel
+    severityLevel,
+    hormoneStage,
+    stageConfidence: calculateStageConfidence(data, hormoneStage)
+  }
+}
+
+// Determine hormone stage based on clinical indicators
+function determineHormoneStage(data: SymptomAssessment, scores: any): HormoneStage {
+  const age = data.age || 45 // Default age if not provided
+  const menstrualStatus = data.menstrual_status
+  const { vasomotorScore, sexualScore, drynessScore } = scores
+
+  // Postmenopause indicators (strongest evidence)
+  if (
+    menstrualStatus?.includes('stopped') ||
+    age > 55 ||
+    (drynessScore >= 4 && vasomotorScore >= 8 && age > 50) ||
+    (sexualScore >= 8 && vasomotorScore >= 6 && age > 48)
+  ) {
+    return 'postmenopause'
+  }
+
+  // Perimenopause indicators (transitional phase)
+  if (
+    age >= 40 &&
+    (
+      menstrualStatus?.includes('irregular') ||
+      vasomotorScore >= 4 ||
+      (vasomotorScore >= 2 && scores.totalScore >= 12) ||
+      (age >= 45 && scores.totalScore >= 8)
+    )
+  ) {
+    return 'perimenopause'
+  }
+
+  // Premenopause (default for younger women with regular cycles)
+  return 'premenopause'
+}
+
+// Calculate confidence level in stage determination
+function calculateStageConfidence(data: SymptomAssessment, stage: HormoneStage): number {
+  let confidence = 0.5 // Base confidence
+
+  const age = data.age || 45
+  const menstrualStatus = data.menstrual_status
+
+  // High confidence indicators
+  if (menstrualStatus?.includes('stopped') && stage === 'postmenopause') confidence += 0.4
+  if (menstrualStatus?.includes('regular') && age < 40 && stage === 'premenopause') confidence += 0.3
+  if (menstrualStatus?.includes('irregular') && age >= 45 && stage === 'perimenopause') confidence += 0.3
+
+  // Age-based confidence adjustments
+  if (stage === 'postmenopause' && age > 52) confidence += 0.2
+  if (stage === 'perimenopause' && age >= 45 && age <= 55) confidence += 0.2  
+  if (stage === 'premenopause' && age < 45) confidence += 0.2
+
+  return Math.min(1.0, confidence)
+}
+
+// Determine severity level within hormone stage
+function determineSeverityLevel(totalScore: number, stage: HormoneStage): 'mild' | 'moderate' | 'severe' | 'very_severe' {
+  // Adjust scoring thresholds based on hormone stage
+  let mildThreshold = 8
+  let moderateThreshold = 18
+  let severeThreshold = 30
+
+  // Perimenopause and postmenopause typically have higher symptom severity
+  if (stage === 'perimenopause') {
+    mildThreshold = 6
+    moderateThreshold = 15
+    severeThreshold = 25
+  } else if (stage === 'postmenopause') {
+    mildThreshold = 5
+    moderateThreshold = 12
+    severeThreshold = 22
+  }
+
+  if (totalScore <= mildThreshold) {
+    return 'mild'
+  } else if (totalScore <= moderateThreshold) {
+    return 'moderate'
+  } else if (totalScore <= severeThreshold) {
+    return 'severe'
+  } else {
+    return 'very_severe'
   }
 }
 
@@ -170,6 +259,10 @@ export function calculateRiskFactors(data: SymptomAssessment) {
 // Generate clinical recommendations based on assessment
 export function generateRecommendations(data: SymptomAssessment, scores: any): string[] {
   const recommendations: string[] = []
+
+  // Stage-specific recommendations
+  const stageRecommendations = generateStageRecommendations(scores.hormoneStage, scores)
+  recommendations.push(...stageRecommendations)
 
   // Vasomotor symptoms recommendations
   if (scores.vasomotorScore > 6) {
@@ -241,6 +334,121 @@ export function generateRecommendations(data: SymptomAssessment, scores: any): s
   }
 
   return recommendations
+}
+
+// Generate stage-specific recommendations and package suggestions
+function generateStageRecommendations(stage: HormoneStage, scores: any): string[] {
+  const recommendations: string[] = []
+
+  switch (stage) {
+    case 'premenopause':
+      recommendations.push('Focus on lifestyle optimization and symptom management')
+      recommendations.push('Consider tracking menstrual patterns for future reference')
+      if (scores.totalScore >= 10) {
+        recommendations.push('Early intervention may prevent symptom progression')
+      }
+      break
+
+    case 'perimenopause':
+      recommendations.push('Perimenopause transition management is key to symptom relief')
+      recommendations.push('Consider comprehensive hormone evaluation and treatment options')
+      recommendations.push('Regular monitoring as hormone levels fluctuate during this phase')
+      if (scores.severityLevel === 'moderate' || scores.severityLevel === 'severe') {
+        recommendations.push('Active treatment recommended to improve quality of life')
+      }
+      break
+
+    case 'postmenopause':
+      recommendations.push('Long-term hormone health management and preventive care')
+      recommendations.push('Focus on bone health, cardiovascular health, and symptom management')
+      recommendations.push('Consider ongoing hormone replacement therapy with regular review')
+      if (scores.sexualScore >= 4) {
+        recommendations.push('Urogenital symptoms require targeted treatment approach')
+      }
+      break
+  }
+
+  return recommendations
+}
+
+// Recommend appropriate care package based on assessment results
+export function recommendPackage(scores: any, hasInsurance: boolean = true): {
+  recommendedPackage: 'medical_aid' | 'cash'
+  urgency: 'routine' | 'priority' | 'urgent'
+  additionalServices: string[]
+  reasoning: string[]
+} {
+  const { hormoneStage, severityLevel, totalScore, psychologicalScore } = scores
+  const reasoning: string[] = []
+  const additionalServices: string[] = []
+
+  // Base package recommendation on user's insurance preference
+  const recommendedPackage = hasInsurance ? 'medical_aid' : 'cash'
+
+  // Determine urgency based on stage and severity
+  let urgency: 'routine' | 'priority' | 'urgent' = 'routine'
+
+  if (severityLevel === 'severe' || severityLevel === 'very_severe') {
+    urgency = 'urgent'
+    reasoning.push('High symptom severity requires immediate comprehensive care')
+  } else if (
+    (hormoneStage === 'perimenopause' && totalScore >= 15) ||
+    (hormoneStage === 'postmenopause' && totalScore >= 12)
+  ) {
+    urgency = 'priority'
+    reasoning.push('Moderate to severe symptoms in hormone transition phase')
+  }
+
+  // Stage-specific reasoning
+  switch (hormoneStage) {
+    case 'premenopause':
+      reasoning.push('Early intervention package recommended for symptom prevention')
+      if (totalScore >= 12) {
+        reasoning.push('Comprehensive evaluation needed despite pre-menopausal status')
+      }
+      break
+
+    case 'perimenopause':
+      reasoning.push('Perimenopause requires coordinated care approach with multiple consultations')
+      reasoning.push('Package format ideal for managing fluctuating hormone levels')
+      if (severityLevel !== 'mild') {
+        additionalServices.push('dietitian_cgm')
+        reasoning.push('Metabolic support recommended during hormone transition')
+      }
+      break
+
+    case 'postmenopause':
+      reasoning.push('Long-term management approach with regular monitoring')
+      reasoning.push('Package provides comprehensive care coordination for complex needs')
+      additionalServices.push('dietitian_cgm')
+      if (psychologicalScore >= 8) {
+        additionalServices.push('counsellor_dnalysis')
+        reasoning.push('Psychological support recommended for mood and mental health')
+      }
+      break
+  }
+
+  // Additional services based on symptom patterns
+  if (psychologicalScore >= 10) {
+    if (!additionalServices.includes('counsellor_dnalysis')) {
+      additionalServices.push('counsellor_dnalysis')
+      reasoning.push('High psychological symptom score suggests benefit from counselling support')
+    }
+  }
+
+  if (totalScore >= 20 && hormoneStage !== 'premenopause') {
+    if (!additionalServices.includes('dietitian_cgm')) {
+      additionalServices.push('dietitian_cgm')
+      reasoning.push('High overall symptom burden suggests need for metabolic and nutritional support')
+    }
+  }
+
+  return {
+    recommendedPackage,
+    urgency,
+    additionalServices,
+    reasoning
+  }
 }
 
 // Get patient assessments
