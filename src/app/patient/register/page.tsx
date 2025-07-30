@@ -12,6 +12,7 @@ import { Form } from '@/components/ui/form'
 import { ArrowLeft, ArrowRight, Upload, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { PatientRegistration, patientRegistrationSchema, medicalAidSchemes } from '@/lib/validations/patient'
+import { scrollToTop } from '@/lib/utils'
 import { createPatient, updatePatientProfile, getCurrentUserPatient } from '@/lib/supabase/patients'
 import { PersonalInfoStep } from '@/components/forms/registration/PersonalInfoStep'
 import { MedicalAidStep } from '@/components/forms/registration/MedicalAidStep'
@@ -186,10 +187,12 @@ export default function PatientRegistrationPage() {
     if (!isValid) return
 
     setCurrentStep(prev => Math.min(prev + 1, STEPS.length))
+    scrollToTop()
   }
 
   const prevStep = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1))
+    scrollToTop()
   }
 
   const onSubmit = async (data: PatientRegistration) => {

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import Image from 'next/image'
+import { scrollToTop } from '@/lib/utils'
 
 interface DoctorRegistrationData {
   // Personal Information
@@ -116,6 +117,7 @@ export default function DoctorRegisterPage() {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => prev + 1)
       setError(null)
+      scrollToTop()
     } else {
       setError('Please fill in all required fields')
     }
@@ -470,7 +472,10 @@ export default function DoctorRegisterPage() {
                 {currentStep > 0 && (
                   <Button
                     variant="outline"
-                    onClick={() => setCurrentStep(prev => prev - 1)}
+                    onClick={() => {
+                      setCurrentStep(prev => prev - 1)
+                      scrollToTop()
+                    }}
                     disabled={loading}
                   >
                     Previous

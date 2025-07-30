@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label'
 import { ArrowLeft, ArrowRight, FileText, CheckCircle, Thermometer, Moon, Brain, Heart, Activity } from 'lucide-react'
 import Link from 'next/link'
 import { SymptomAssessment, symptomAssessmentSchema } from '@/lib/validations/patient'
+import { scrollToTop } from '@/lib/utils'
 import { createAssessment, calculateAssessmentScores, formatAssessmentDate, getAssessmentById } from '@/lib/supabase/assessments'
 import { getCurrentUserPatient } from '@/lib/supabase/patients'
 import { useAuth } from '@/contexts/AuthContext'
@@ -240,10 +241,12 @@ function SymptomAssessmentContent() {
     if (!isValid) return
 
     setCurrentStep(prev => Math.min(prev + 1, ASSESSMENT_STEPS.length))
+    scrollToTop()
   }
 
   const prevStep = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1))
+    scrollToTop()
   }
 
   const onSubmit = async (data: SymptomAssessment) => {
