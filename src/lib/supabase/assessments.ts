@@ -558,3 +558,119 @@ export async function getAssessmentById(assessmentId: string) {
     throw error
   }
 }
+
+// Create Quick Screening assessment
+export async function createQuickScreeningAssessment(
+  screeningData: any,
+  results: any,
+  patientEmail: string
+) {
+  const supabase = createClient()
+  
+  try {
+    // Get patient by email
+    console.log('Finding patient by email for quick screening:', patientEmail)
+    const { exists, patient } = await checkPatientByEmail(patientEmail)
+    
+    if (!exists || !patient) {
+      throw new Error('Patient not found. Please complete registration first.')
+    }
+
+    // Create assessment record for quick screening
+    const assessment: Assessment = {
+      patient_id: patient.id,
+      assessment_data: {
+        type: 'quick_screening',
+        screening_data: screeningData,
+        results: results
+      } as any,
+      risk_factors: [],
+      total_score: results.totalScore,
+      severity_level: results.severityLevel,
+      recommendations: generateQuickScreeningRecommendations(results)
+    }
+
+    console.log('Creating quick screening assessment with data:', assessment)
+
+    const { data: savedAssessment, error } = await supabase
+      .from('symptom_assessments')
+      .insert([assessment])
+      .select(`
+        *,
+        patient:patients(full_name, email)
+      `)
+      .single()
+
+    if (error) {
+      console.error('Supabase error creating quick screening assessment:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+      throw error
+    }
+
+    console.log('Quick screening assessment created successfully:', savedAssessment)
+    return savedAssessment
+
+  } catch (error) {
+    console.error('Failed to create quick screening assessment:', error)
+    throw error
+  }
+}
+
+// Generate recommendations for quick screening results
+function generateQuickScreeningRecommendations(results: any): string[] {
+  const recommendations: string[] = []
+  
+  // Based on hormone stage
+  switch (results.hormoneStage) {
+    case 'premenopause':
+      recommendations.push('Focus on lifestyle optimization and preventive care')
+      recommendations.push('Monitor symptoms and consider annual wellness checks')
+      break
+    case 'perimenopause':
+      recommendations.push('Consider comprehensive hormone evaluation')
+      recommendations.push('Discuss symptom management strategies with healthcare provider')
+      break
+    case 'postmenopause':
+      recommendations.push('Regular bone health and cardiovascular screening')
+      recommendations.push('Hormone therapy discussion if symptoms are bothersome')
+      break
+  }
+  
+  // Based on urgency
+  switch (results.urgency) {
+    case 'urgent':
+      recommendations.push('Schedule consultation as soon as possible')
+      recommendations.push('Consider immediate symptom management strategies')
+      break
+    case 'priority':
+      recommendations.push('Schedule follow-up within 2-4 weeks')
+      recommendations.push('Take comprehensive assessment for detailed analysis')
+      break
+    case 'routine':
+      recommendations.push('Continue monitoring symptoms')
+      recommendations.push('Schedule routine check-up within 3-6 months')
+      break
+  }
+  
+  // Symptom-specific recommendations
+  if (results.scores.vasomotor >= 2) {
+    recommendations.push('Discuss hot flash management options')
+  }
+  
+  if (results.scores.psychological >= 2) {
+    recommendations.push('Consider sleep hygiene and stress management techniques')
+  }
+  
+  if (results.scores.physical >= 2) {
+    recommendations.push('Evaluate energy levels and consider nutritional support')
+  }
+  
+  if (results.scores.sexual >= 2) {
+    recommendations.push('Discuss intimate health concerns with healthcare provider')
+  }
+  
+  return recommendations
+}

@@ -456,6 +456,167 @@ export default function PatientDashboardPage() {
         />
       </div>
 
+      {/* Recent Activity Section */}
+      {patientData && (assessments.length > 0 || appointments.length > 0) && (
+        <div className="container mx-auto px-4 sm:px-6 mb-12">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Recent Activity</h2>
+            <p className="text-muted-foreground">Your latest health assessments and appointments</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Recent Assessments */}
+            {assessments.length > 0 && (
+              <Card className="border border-brand-blue/20 shadow-lg bg-gradient-to-br from-brand-blue/5 to-transparent">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Activity className="h-5 w-5 text-brand-blue" />
+                    Latest Assessment
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {(() => {
+                    const latestAssessment = assessments[0]
+                    const scores = calculateAssessmentScores(latestAssessment.assessment_data)
+                    const isQuickScreening = latestAssessment.assessment_data?.type === 'quick_screening'
+                    
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {isQuickScreening ? 'Quick Health Screening' : 'Comprehensive Assessment'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatAssessmentDate(latestAssessment.completed_at)}
+                            </p>
+                          </div>
+                          {getSeverityBadge(latestAssessment.severity_level)}
+                        </div>
+                        
+                        <div className="bg-white/80 rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Total Score:</span>
+                            <span className="font-bold text-lg">{latestAssessment.total_score}</span>
+                          </div>
+                          
+                          {isQuickScreening && latestAssessment.assessment_data?.results ? (
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                              <div className="flex items-center gap-2">
+                                <Thermometer className="h-3 w-3 text-red-500" />
+                                <span>Vasomotor: {latestAssessment.assessment_data.results.scores.vasomotor}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Brain className="h-3 w-3 text-brand-blue" />
+                                <span>Psychological: {latestAssessment.assessment_data.results.scores.psychological}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Activity className="h-3 w-3 text-brand-green" />
+                                <span>Physical: {latestAssessment.assessment_data.results.scores.physical}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Heart className="h-3 w-3 text-brand-pink" />
+                                <span>Sexual: {latestAssessment.assessment_data.results.scores.sexual}</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                              <div className="flex items-center gap-2">
+                                <Thermometer className="h-3 w-3 text-red-500" />
+                                <span>Vasomotor: {scores.vasomotorScore}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Brain className="h-3 w-3 text-brand-blue" />
+                                <span>Psychological: {scores.psychologicalScore}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Activity className="h-3 w-3 text-brand-green" />
+                                <span>Physical: {scores.physicalScore}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Heart className="h-3 w-3 text-brand-pink" />
+                                <span>Sexual: {scores.sexualScore}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white"
+                          onClick={() => setActiveTab('health')}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Full Results
+                        </Button>
+                      </div>
+                    )
+                  })()}
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Recent Appointments */}
+            {appointments.length > 0 && (
+              <Card className="border border-brand-green/20 shadow-lg bg-gradient-to-br from-brand-green/5 to-transparent">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Calendar className="h-5 w-5 text-brand-green" />
+                    Next Appointment
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {(() => {
+                    const nextAppointment = appointments.find(apt => new Date(apt.appointment_date) > new Date()) || appointments[0]
+                    
+                    return (
+                      <div className="space-y-4">
+                        <div className="bg-white/80 rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-semibold text-foreground">
+                                Dr. {nextAppointment.doctor?.full_name}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {nextAppointment.doctor?.specialization}
+                              </p>
+                            </div>
+                            <Badge variant={nextAppointment.payment_status === 'paid' ? 'default' : 'secondary'}>
+                              {nextAppointment.payment_status}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span>{formatAppointmentDateTime(nextAppointment.appointment_date)}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-medium">Fee:</span>
+                            <span>{formatCurrency(nextAppointment.consultation_fee)}</span>
+                          </div>
+                        </div>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full border-brand-green text-brand-green hover:bg-brand-green hover:text-white"
+                          onClick={() => setActiveTab('appointments')}
+                        >
+                          <CalendarDays className="h-4 w-4 mr-2" />
+                          View All Appointments
+                        </Button>
+                      </div>
+                    )
+                  })()}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Quick Actions Section */}
       <div className="container mx-auto px-4 sm:px-6 mb-12">
         <div className="mb-8">

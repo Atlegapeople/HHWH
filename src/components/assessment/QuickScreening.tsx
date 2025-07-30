@@ -26,6 +26,7 @@ import {
   Calendar
 } from 'lucide-react'
 import Link from 'next/link'
+import { createQuickScreeningAssessment } from '@/lib/supabase/assessments'
 
 // Quick screening schema - essential questions only
 const quickScreeningSchema = z.object({
@@ -201,6 +202,7 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
   const [currentStep, setCurrentStep] = useState(0)
   const [isCompleted, setIsCompleted] = useState(false)
   const [results, setResults] = useState<any>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   const form = useForm<QuickScreeningData>({
     resolver: zodResolver(quickScreeningSchema),
@@ -235,6 +237,21 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
       const screeningResults = calculateQuickScore(formData)
       setResults(screeningResults)
       setIsCompleted(true)
+      
+      // Save to database if patient email is available
+      if (patientEmail) {
+        setIsSaving(true)
+        try {
+          await createQuickScreeningAssessment(formData, screeningResults, patientEmail)
+          console.log('Quick screening assessment saved successfully')
+        } catch (error) {
+          console.error('Failed to save quick screening assessment:', error)
+          // Continue showing results even if save fails
+        } finally {
+          setIsSaving(false)
+        }
+      }
+      
       onComplete?.(screeningResults)
     }
   }

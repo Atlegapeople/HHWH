@@ -104,8 +104,11 @@ export default function AssessmentResultsModal({ assessmentId, trigger }: Assess
     )
   }
 
-  // Calculate scores and get recommendations
-  const scores = calculateAssessmentScores(assessmentResult.assessment_data)
+  // Detect assessment type and calculate scores
+  const isQuickScreening = assessmentResult.assessment_data?.type === 'quick_screening'
+  const scores = isQuickScreening 
+    ? assessmentResult.assessment_data.results.scores 
+    : calculateAssessmentScores(assessmentResult.assessment_data)
   const badgeConfig = getSeverityBadge(assessmentResult.severity_level)
   const recommendations = assessmentResult.recommendations || generateRecommendations(assessmentResult.assessment_data, scores)
 
@@ -118,7 +121,7 @@ export default function AssessmentResultsModal({ assessmentId, trigger }: Assess
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="h-6 w-6 text-brand-green" />
-            Assessment Results
+            {isQuickScreening ? 'Quick Health Screening Results' : 'Comprehensive Assessment Results'}
           </DialogTitle>
         </DialogHeader>
         
@@ -162,28 +165,36 @@ export default function AssessmentResultsModal({ assessmentId, trigger }: Assess
                     <Thermometer className="h-4 w-4 text-brand-red" />
                     <span className="text-sm font-medium">Vasomotor</span>
                   </div>
-                  <span className="font-bold text-brand-red">{scores.vasomotorScore}</span>
+                  <span className="font-bold text-brand-red">
+                    {isQuickScreening ? scores.vasomotor : scores.vasomotorScore}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-white rounded-lg">
                   <div className="flex items-center gap-2">
                     <Brain className="h-4 w-4 text-brand-blue" />
                     <span className="text-sm font-medium">Psychological</span>
                   </div>
-                  <span className="font-bold text-brand-blue">{scores.psychologicalScore}</span>
+                  <span className="font-bold text-brand-blue">
+                    {isQuickScreening ? scores.psychological : scores.psychologicalScore}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-white rounded-lg">
                   <div className="flex items-center gap-2">
                     <Activity className="h-4 w-4 text-brand-orange" />
                     <span className="text-sm font-medium">Physical</span>
                   </div>
-                  <span className="font-bold text-brand-orange">{scores.physicalScore}</span>
+                  <span className="font-bold text-brand-orange">
+                    {isQuickScreening ? scores.physical : scores.physicalScore}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-white rounded-lg">
                   <div className="flex items-center gap-2">
                     <Heart className="h-4 w-4 text-brand-pink" />
                     <span className="text-sm font-medium">Sexual Health</span>
                   </div>
-                  <span className="font-bold text-brand-pink">{scores.sexualScore}</span>
+                  <span className="font-bold text-brand-pink">
+                    {isQuickScreening ? scores.sexual : scores.sexualScore}
+                  </span>
                 </div>
               </div>
             </CardContent>
