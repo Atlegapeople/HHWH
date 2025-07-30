@@ -527,7 +527,7 @@ export default function DoctorConsultationPage() {
     <div className="min-h-screen bg-gradient-to-br from-brand-green/10 via-white to-brand-blue/10">
       
       {/* Header */}
-      <header className="border-b border-brand-green/20 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-0 z-50">
+      <header className="border-b border-brand-green/20 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-16 z-40">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <Link href="/doctor/appointments" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">

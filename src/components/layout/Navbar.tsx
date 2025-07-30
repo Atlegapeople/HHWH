@@ -42,6 +42,31 @@ export default function Navbar() {
   const pathname = usePathname()
   const supabase = createClient()
 
+  // Handle mobile menu close on resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Handle body scroll lock when mobile menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isMenuOpen])
+
   // Fetch user's profile photo
   useEffect(() => {
     const fetchProfilePhoto = async () => {
@@ -105,7 +130,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-lg">
+    <nav className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-white/95 backdrop-blur-lg supports-[backdrop-filter]:bg-white/80">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -301,7 +326,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t bg-white/95 backdrop-blur-sm">
+          <div className="md:hidden py-4 border-t bg-white/95 backdrop-blur-sm shadow-lg">
             <div className="flex flex-col space-y-2">
               <Link 
                 href="/"

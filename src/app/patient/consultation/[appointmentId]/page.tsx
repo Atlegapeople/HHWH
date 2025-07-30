@@ -619,7 +619,7 @@ export default function ConsultationPage() {
       <ToastContainer />
       
       {/* Header */}
-      <header className="border-b border-brand-gray/20 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-0 z-50">
+      <header className="border-b border-brand-gray/20 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-16 z-40">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <Link href="/patient/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">

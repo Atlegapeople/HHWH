@@ -198,7 +198,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Main content */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Mobile header */}
-          <div className="lg:hidden bg-white/80 backdrop-blur-md border-b border-gray-200/50 px-4 py-3 sticky top-0 z-10">
+          <div className="lg:hidden bg-white/80 backdrop-blur-md border-b border-gray-200/50 px-4 py-3">
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
