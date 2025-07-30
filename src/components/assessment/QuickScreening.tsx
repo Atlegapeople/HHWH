@@ -665,7 +665,6 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
           </div>
         </div>
       </div>
-      </div>
     )
   }
 
