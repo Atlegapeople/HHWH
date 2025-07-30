@@ -477,8 +477,10 @@ export default function PatientDashboardPage() {
                 <CardContent className="space-y-4">
                   {(() => {
                     const latestAssessment = assessments[0]
-                    const scores = calculateAssessmentScores(latestAssessment.assessment_data)
                     const isQuickScreening = latestAssessment.assessment_data?.type === 'quick_screening'
+                    const scores = isQuickScreening 
+                      ? (latestAssessment.assessment_data?.results?.scores || {})
+                      : calculateAssessmentScores(latestAssessment.assessment_data || {})
                     
                     return (
                       <div className="space-y-4">
@@ -500,42 +502,42 @@ export default function PatientDashboardPage() {
                             <span className="font-bold text-lg">{latestAssessment.total_score}</span>
                           </div>
                           
-                          {isQuickScreening && latestAssessment.assessment_data?.results ? (
+                          {isQuickScreening && latestAssessment.assessment_data?.results?.scores ? (
                             <div className="grid grid-cols-2 gap-3 text-xs">
                               <div className="flex items-center gap-2">
                                 <Thermometer className="h-3 w-3 text-red-500" />
-                                <span>Vasomotor: {latestAssessment.assessment_data.results.scores.vasomotor}</span>
+                                <span>Vasomotor: {latestAssessment.assessment_data.results.scores.vasomotor || 0}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Brain className="h-3 w-3 text-brand-blue" />
-                                <span>Psychological: {latestAssessment.assessment_data.results.scores.psychological}</span>
+                                <span>Psychological: {latestAssessment.assessment_data.results.scores.psychological || 0}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Activity className="h-3 w-3 text-brand-green" />
-                                <span>Physical: {latestAssessment.assessment_data.results.scores.physical}</span>
+                                <span>Physical: {latestAssessment.assessment_data.results.scores.physical || 0}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Heart className="h-3 w-3 text-brand-pink" />
-                                <span>Sexual: {latestAssessment.assessment_data.results.scores.sexual}</span>
+                                <span>Sexual: {latestAssessment.assessment_data.results.scores.sexual || 0}</span>
                               </div>
                             </div>
                           ) : (
                             <div className="grid grid-cols-2 gap-3 text-xs">
                               <div className="flex items-center gap-2">
                                 <Thermometer className="h-3 w-3 text-red-500" />
-                                <span>Vasomotor: {scores.vasomotorScore}</span>
+                                <span>Vasomotor: {scores?.vasomotorScore || 0}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Brain className="h-3 w-3 text-brand-blue" />
-                                <span>Psychological: {scores.psychologicalScore}</span>
+                                <span>Psychological: {scores?.psychologicalScore || 0}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Activity className="h-3 w-3 text-brand-green" />
-                                <span>Physical: {scores.physicalScore}</span>
+                                <span>Physical: {scores?.physicalScore || 0}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Heart className="h-3 w-3 text-brand-pink" />
-                                <span>Sexual: {scores.sexualScore}</span>
+                                <span>Sexual: {scores?.sexualScore || 0}</span>
                               </div>
                             </div>
                           )}

@@ -264,181 +264,407 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
 
   if (isCompleted && results) {
     return (
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Modern Results Header */}
-        <div className="text-center space-y-6">
-          <div className="relative">
-            <div className="bg-gradient-to-r from-brand-green to-brand-blue p-4 rounded-2xl w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg">
-              <CheckCircle className="h-10 w-10 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-brand-pink/10 via-white to-brand-blue-light/15">
+        <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+          {/* Stunning Results Header */}
+          <div className="text-center space-y-8 py-12">
+            <div className="relative inline-flex">
+              <div className="bg-gradient-to-r from-brand-green via-brand-blue to-brand-purple p-6 rounded-3xl shadow-2xl">
+                <CheckCircle className="h-16 w-16 text-white drop-shadow-lg" />
+              </div>
+              <div className="absolute -top-3 -right-3 bg-gradient-to-r from-green-400 to-green-500 rounded-full p-3 shadow-lg animate-bounce">
+                <div className="w-4 h-4 bg-white rounded-full" />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-brand-green/20 to-brand-blue/20 rounded-3xl blur-xl scale-110 -z-10" />
             </div>
-            <div className="absolute -top-2 -right-2 bg-white rounded-full p-2 shadow-lg">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+            
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-green/10 to-brand-blue/10 rounded-full px-6 py-2 border border-brand-green/20">
+                <Target className="h-4 w-4 text-brand-green" />
+                <span className="text-sm font-medium text-brand-green">Health Assessment Complete</span>
+              </div>
+              <h1 className="text-4xl md:text-6xl font-heading font-bold">
+                <span className="bg-gradient-to-r from-brand-green via-brand-blue to-brand-purple bg-clip-text text-transparent">
+                  Your Health
+                </span>
+                <br />
+                <span className="text-foreground">Insights</span>
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                Based on your responses, we've analyzed your hormone health stage and created personalized recommendations for your wellness journey.
+              </p>
             </div>
           </div>
-          <div className="space-y-3">
-            <h1 className="text-3xl md:text-4xl font-heading font-bold bg-gradient-to-r from-brand-green to-brand-blue bg-clip-text text-transparent">
-              Screening Complete!
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Your personalized hormone health assessment reveals important insights about your wellness journey
-            </p>
-          </div>
-        </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Modern Hormone Stage Card */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 backdrop-blur-sm overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-brand-green/10 to-brand-blue/10 rounded-full -translate-y-16 translate-x-16" />
-            <CardHeader className="relative">
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <div className="bg-gradient-to-r from-brand-green to-brand-blue p-2 rounded-xl">
-                  <Target className="h-6 w-6 text-white" />
-                </div>
-                Hormone Health Stage
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative space-y-4">
-              <div className="text-center space-y-4">
-                <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl text-xl font-bold mb-3 shadow-lg ${
-                  results.hormoneStage === 'premenopause' ? 'bg-gradient-to-r from-brand-green/20 to-brand-green/10 text-brand-green border-2 border-brand-green/20' :
-                  results.hormoneStage === 'perimenopause' ? 'bg-gradient-to-r from-brand-amber/20 to-brand-amber/10 text-brand-amber border-2 border-brand-amber/20' :
-                  'bg-gradient-to-r from-brand-purple/20 to-brand-purple/10 text-brand-purple border-2 border-brand-purple/20'
+          {/* Hero Stats Section */}
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            {/* Hormone Stage Card */}
+            <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm overflow-hidden relative group hover:scale-105 transition-all duration-300">
+              <div className={`absolute inset-0 bg-gradient-to-br opacity-5 ${
+                results.hormoneStage === 'premenopause' ? 'from-brand-green to-brand-green' :
+                results.hormoneStage === 'perimenopause' ? 'from-brand-amber to-brand-amber' :
+                'from-brand-purple to-brand-purple'
+              }`} />
+              <div className="absolute top-4 right-4 opacity-10">
+                <Target className="h-16 w-16" />
+              </div>
+              <CardContent className="relative p-8 text-center space-y-4">
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${
+                  results.hormoneStage === 'premenopause' ? 'bg-brand-green/10 text-brand-green' :
+                  results.hormoneStage === 'perimenopause' ? 'bg-brand-amber/10 text-brand-amber' :
+                  'bg-brand-purple/10 text-brand-purple'
                 }`}>
-                  <div className={`w-3 h-3 rounded-full ${
+                  <div className={`w-2 h-2 rounded-full ${
                     results.hormoneStage === 'premenopause' ? 'bg-brand-green' :
                     results.hormoneStage === 'perimenopause' ? 'bg-brand-amber' :
                     'bg-brand-purple'
                   }`} />
-                  {results.hormoneStage === 'premenopause' ? 'Premenopause' :
-                   results.hormoneStage === 'perimenopause' ? 'Perimenopause' : 
-                   'Postmenopause'}
+                  Health Stage
                 </div>
-                <div className="bg-gray-100 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-foreground">{results.totalScore}</div>
-                  <div className="text-sm text-muted-foreground">Total Score out of 24</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Modern Recommended Action Card */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 backdrop-blur-sm overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-brand-blue/10 to-brand-purple/10 rounded-full -translate-y-16 -translate-x-16" />
-            <CardHeader className="relative">
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <div className="bg-gradient-to-r from-brand-blue to-brand-purple p-2 rounded-xl">
-                  <Package className="h-6 w-6 text-white" />
-                </div>
-                Recommended Next Step
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative space-y-6">
-              <div className="text-center space-y-4">
-                <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl text-lg font-bold shadow-lg ${
-                  results.urgency === 'urgent' ? 'bg-gradient-to-r from-red-500/20 to-red-400/10 text-red-600 border-2 border-red-200' :
-                  results.urgency === 'priority' ? 'bg-gradient-to-r from-brand-amber/20 to-brand-amber/10 text-brand-amber border-2 border-brand-amber/20' :
-                  'bg-gradient-to-r from-brand-green/20 to-brand-green/10 text-brand-green border-2 border-brand-green/20'
-                }`}>
-                  <Info className="h-5 w-5" />
-                  {results.urgency === 'urgent' ? 'Urgent Consultation' :
-                   results.urgency === 'priority' ? 'Priority Assessment' : 
-                   'Routine Monitoring'}
-                </div>
-                
-                <div className="bg-gray-100 rounded-xl p-4 text-center">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {results.recommendedAction === 'immediate_consultation' && 
-                      'We recommend booking a consultation as soon as possible to address your symptoms and develop a personalized treatment plan.'}
-                    {results.recommendedAction === 'comprehensive_assessment' && 
-                      'Your symptoms suggest you would benefit from our comprehensive assessment for detailed analysis and personalized recommendations.'}
-                    {results.recommendedAction === 'routine_monitoring' && 
-                      'Continue monitoring your symptoms with regular check-ups. Consider lifestyle modifications and routine health maintenance.'}
+                <div className="space-y-2">
+                  <h3 className={`text-2xl font-bold ${
+                    results.hormoneStage === 'premenopause' ? 'text-brand-green' :
+                    results.hormoneStage === 'perimenopause' ? 'text-brand-amber' :
+                    'text-brand-purple'
+                  }`}>
+                    {results.hormoneStage === 'premenopause' ? 'Premenopause' :
+                     results.hormoneStage === 'perimenopause' ? 'Perimenopause' : 
+                     'Postmenopause'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {results.hormoneStage === 'premenopause' ? 'Regular reproductive phase' :
+                     results.hormoneStage === 'perimenopause' ? 'Transitional phase' : 
+                     'Post-reproductive phase'}
                   </p>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Total Score Card */}
+            <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm overflow-hidden relative group hover:scale-105 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 to-brand-blue/10" />
+              <div className="absolute top-4 right-4 opacity-10">
+                <Activity className="h-16 w-16" />
+              </div>
+              <CardContent className="relative p-8 text-center space-y-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-brand-blue/10 text-brand-blue">
+                  <div className="w-2 h-2 rounded-full bg-brand-blue" />
+                  Assessment Score
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-4xl font-bold text-brand-blue">
+                    {results.totalScore}
+                    <span className="text-xl text-muted-foreground">/24</span>
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Symptom severity index
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Urgency Level Card */}
+            <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm overflow-hidden relative group hover:scale-105 transition-all duration-300">
+              <div className={`absolute inset-0 bg-gradient-to-br opacity-5 ${
+                results.urgency === 'urgent' ? 'from-red-500 to-red-500' :
+                results.urgency === 'priority' ? 'from-brand-amber to-brand-amber' :
+                'from-brand-green to-brand-green'
+              }`} />
+              <div className="absolute top-4 right-4 opacity-10">
+                <Info className="h-16 w-16" />
+              </div>
+              <CardContent className="relative p-8 text-center space-y-4">
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${
+                  results.urgency === 'urgent' ? 'bg-red-100 text-red-600' :
+                  results.urgency === 'priority' ? 'bg-brand-amber/10 text-brand-amber' :
+                  'bg-brand-green/10 text-brand-green'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    results.urgency === 'urgent' ? 'bg-red-500' :
+                    results.urgency === 'priority' ? 'bg-brand-amber' :
+                    'bg-brand-green'
+                  }`} />
+                  Care Priority
+                </div>
+                <div className="space-y-2">
+                  <h3 className={`text-2xl font-bold ${
+                    results.urgency === 'urgent' ? 'text-red-600' :
+                    results.urgency === 'priority' ? 'text-brand-amber' :
+                    'text-brand-green'
+                  }`}>
+                    {results.urgency === 'urgent' ? 'Urgent' :
+                     results.urgency === 'priority' ? 'Priority' : 
+                     'Routine'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {results.urgency === 'urgent' ? 'Needs immediate attention' :
+                     results.urgency === 'priority' ? 'Requires follow-up' : 
+                     'Regular monitoring'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Recommendations */}
+          <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-brand-blue/5 to-brand-purple/5 px-8 py-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-r from-brand-blue to-brand-purple p-3 rounded-2xl">
+                  <Package className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Personalized Recommendations</h2>
+                  <p className="text-muted-foreground">Based on your hormone health stage and symptom profile</p>
+                </div>
+              </div>
+            </div>
+            <CardContent className="p-8">
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Immediate Action */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${
+                      results.urgency === 'urgent' ? 'bg-red-100' :
+                      results.urgency === 'priority' ? 'bg-brand-amber/10' :
+                      'bg-brand-green/10'
+                    }`}>
+                      <Calendar className={`h-5 w-5 ${
+                        results.urgency === 'urgent' ? 'text-red-600' :
+                        results.urgency === 'priority' ? 'text-brand-amber' :
+                        'text-brand-green'
+                      }`} />
+                    </div>
+                    <h3 className="text-lg font-semibold">Immediate Action</h3>
+                  </div>
+                  <div className={`p-4 rounded-xl border-l-4 ${
+                    results.urgency === 'urgent' ? 'bg-red-50 border-red-500' :
+                    results.urgency === 'priority' ? 'bg-brand-amber/5 border-brand-amber' :
+                    'bg-brand-green/5 border-brand-green'
+                  }`}>
+                    <p className="text-sm leading-relaxed">
+                      {results.recommendedAction === 'immediate_consultation' && 
+                        'Schedule a consultation with our hormone specialists as soon as possible. Your symptoms indicate you would benefit from professional evaluation and potentially immediate intervention.'}
+                      {results.recommendedAction === 'comprehensive_assessment' && 
+                        'Consider taking our comprehensive assessment for detailed analysis. Your initial screening suggests areas that warrant deeper evaluation.'}
+                      {results.recommendedAction === 'routine_monitoring' && 
+                        'Continue monitoring your symptoms and maintain regular wellness check-ups. Focus on lifestyle optimization and preventive care.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Next Steps */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-brand-purple/10 p-2 rounded-xl">
+                      <ArrowRight className="h-5 w-5 text-brand-purple" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Next Steps</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {results.urgency === 'urgent' && (
+                      <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0" />
+                        <span className="text-sm">Book consultation within 1-2 weeks</span>
+                      </div>
+                    )}
+                    <div className="flex items-start gap-3 p-3 bg-brand-blue/5 rounded-lg">
+                      <div className="w-2 h-2 bg-brand-blue rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-sm">Consider comprehensive assessment for detailed insights</span>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 bg-brand-green/5 rounded-lg">
+                      <div className="w-2 h-2 bg-brand-green rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-sm">Maintain symptom diary for tracking progress</span>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 bg-brand-purple/5 rounded-lg">
+                      <div className="w-2 h-2 bg-brand-purple rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-sm">Explore lifestyle modifications and wellness strategies</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Modern Score Breakdown */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-xl justify-center">
-              <div className="bg-gradient-to-r from-brand-blue to-brand-purple p-2 rounded-xl">
-                <Activity className="h-6 w-6 text-white" />
-              </div>
-              Symptom Category Analysis
-            </CardTitle>
-            <CardDescription className="text-center max-w-2xl mx-auto">
-              Your symptoms broken down by category to help identify areas of focus
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="text-center group hover:scale-105 transition-transform duration-200">
-                <div className="bg-gradient-to-br from-red-500/10 to-red-400/5 p-4 rounded-2xl w-20 h-20 mx-auto mb-4 flex items-center justify-center group-hover:shadow-lg transition-shadow">
-                  <Thermometer className="h-8 w-8 text-red-500" />
+          {/* Symptom Analysis */}
+          <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm overflow-hidden">
+            <div className="bg-gradient-to-r from-brand-green/5 to-brand-blue/5 px-8 py-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-r from-brand-green to-brand-blue p-3 rounded-2xl">
+                  <Activity className="h-8 w-8 text-white" />
                 </div>
-                <div className="text-3xl font-bold text-red-500 mb-1">{results.scores.vasomotor}</div>
-                <div className="text-sm font-medium text-muted-foreground">Vasomotor</div>
-                <div className="text-xs text-muted-foreground">Hot flashes & sweats</div>
-              </div>
-              <div className="text-center group hover:scale-105 transition-transform duration-200">
-                <div className="bg-gradient-to-br from-brand-blue/10 to-brand-blue/5 p-4 rounded-2xl w-20 h-20 mx-auto mb-4 flex items-center justify-center group-hover:shadow-lg transition-shadow">
-                  <Brain className="h-8 w-8 text-brand-blue" />
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Symptom Analysis</h2>
+                  <p className="text-muted-foreground">Detailed breakdown of your health indicators by category</p>
                 </div>
-                <div className="text-3xl font-bold text-brand-blue mb-1">{results.scores.psychological}</div>
-                <div className="text-sm font-medium text-muted-foreground">Psychological</div>
-                <div className="text-xs text-muted-foreground">Mood & sleep</div>
-              </div>
-              <div className="text-center group hover:scale-105 transition-transform duration-200">
-                <div className="bg-gradient-to-br from-brand-green/10 to-brand-green/5 p-4 rounded-2xl w-20 h-20 mx-auto mb-4 flex items-center justify-center group-hover:shadow-lg transition-shadow">
-                  <Activity className="h-8 w-8 text-brand-green" />
-                </div>
-                <div className="text-3xl font-bold text-brand-green mb-1">{results.scores.physical}</div>
-                <div className="text-sm font-medium text-muted-foreground">Physical</div>
-                <div className="text-xs text-muted-foreground">Energy & body</div>
-              </div>
-              <div className="text-center group hover:scale-105 transition-transform duration-200">
-                <div className="bg-gradient-to-br from-brand-pink/10 to-brand-pink/5 p-4 rounded-2xl w-20 h-20 mx-auto mb-4 flex items-center justify-center group-hover:shadow-lg transition-shadow">
-                  <Heart className="h-8 w-8 text-brand-pink" />
-                </div>
-                <div className="text-3xl font-bold text-brand-pink mb-1">{results.scores.sexual}</div>
-                <div className="text-sm font-medium text-muted-foreground">Sexual Health</div>
-                <div className="text-xs text-muted-foreground">Intimacy & comfort</div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <CardContent className="p-8">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Vasomotor */}
+                <div className="group">
+                  <div className="bg-gradient-to-br from-red-50 to-red-100/50 rounded-2xl p-6 text-center space-y-4 group-hover:shadow-lg transition-all duration-300 border border-red-100">
+                    <div className="bg-gradient-to-br from-red-500 to-red-600 p-4 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center shadow-lg">
+                      <Thermometer className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-4xl font-bold text-red-600">{results.scores.vasomotor}</div>
+                      <div className="text-sm font-semibold text-red-700">Vasomotor</div>
+                      <div className="text-xs text-red-600/70 leading-relaxed">Hot flashes, night sweats, and heat-related symptoms</div>
+                    </div>
+                    <div className="w-full bg-red-200 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${(results.scores.vasomotor / 6) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-        {/* Modern Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-          {results.urgency === 'urgent' && (
-            <Link href="/patient/packages" className="group">
-              <Button className="bg-gradient-to-r from-brand-green to-brand-blue hover:from-brand-green/90 hover:to-brand-blue/90 text-white border-0 px-8 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-xl group-hover:shadow-green-200">
-                <Package className="h-5 w-5 mr-3" />
-                View Care Packages
-                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-          )}
-          <Link href="/patient/assessment" className="group">
-            <Button variant="outline" className="border-2 border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg">
-              <Activity className="h-5 w-5 mr-3" />
-              Take Full Assessment
-              <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-          {patientEmail && (
-            <Link href="/patient/book-appointment" className="group">
-              <Button variant="outline" className="border-2 border-brand-purple text-brand-purple hover:bg-brand-purple hover:text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg">
-                <Calendar className="h-5 w-5 mr-3" />
-                Book Consultation
-                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-          )}
+                {/* Psychological */}
+                <div className="group">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-6 text-center space-y-4 group-hover:shadow-lg transition-all duration-300 border border-blue-100">
+                    <div className="bg-gradient-to-br from-brand-blue to-blue-600 p-4 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center shadow-lg">
+                      <Brain className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-4xl font-bold text-brand-blue">{results.scores.psychological}</div>
+                      <div className="text-sm font-semibold text-blue-700">Psychological</div>
+                      <div className="text-xs text-blue-600/70 leading-relaxed">Mood changes, sleep quality, and emotional wellbeing</div>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-brand-blue to-blue-600 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${(results.scores.psychological / 6) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Physical */}
+                <div className="group">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-2xl p-6 text-center space-y-4 group-hover:shadow-lg transition-all duration-300 border border-green-100">
+                    <div className="bg-gradient-to-br from-brand-green to-green-600 p-4 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center shadow-lg">
+                      <Activity className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-4xl font-bold text-brand-green">{results.scores.physical}</div>
+                      <div className="text-sm font-semibold text-green-700">Physical</div>
+                      <div className="text-xs text-green-600/70 leading-relaxed">Energy levels, fatigue, and physical symptoms</div>
+                    </div>
+                    <div className="w-full bg-green-200 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-brand-green to-green-600 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${(results.scores.physical / 3) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sexual Health */}
+                <div className="group">
+                  <div className="bg-gradient-to-br from-pink-50 to-pink-100/50 rounded-2xl p-6 text-center space-y-4 group-hover:shadow-lg transition-all duration-300 border border-pink-100">
+                    <div className="bg-gradient-to-br from-brand-pink to-pink-600 p-4 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center shadow-lg">
+                      <Heart className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-4xl font-bold text-brand-pink">{results.scores.sexual}</div>
+                      <div className="text-sm font-semibold text-pink-700">Sexual Health</div>
+                      <div className="text-xs text-pink-600/70 leading-relaxed">Intimacy, comfort, and sexual wellness</div>
+                    </div>
+                    <div className="w-full bg-pink-200 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-brand-pink to-pink-600 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${(results.scores.sexual / 3) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Action Center */}
+          <div className="bg-gradient-to-r from-brand-pink/5 via-brand-blue/5 to-brand-purple/5 rounded-3xl p-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-foreground mb-2">Ready for Your Next Step?</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Based on your results, here are the recommended actions to continue your hormone health journey
+              </p>
+            </div>
+            
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              {/* Primary Action based on urgency */}
+              {results.urgency === 'urgent' && (
+                <Link href="/patient/packages" className="group">
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100/50 hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                    <CardContent className="p-6 text-center space-y-4">
+                      <div className="bg-gradient-to-r from-red-500 to-red-600 p-4 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center shadow-lg">
+                        <Package className="h-8 w-8 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-red-700 mb-2">View Care Packages</h3>
+                        <p className="text-sm text-red-600/70">Immediate care options for urgent symptoms</p>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-red-600 mx-auto group-hover:translate-x-1 transition-transform" />
+                    </CardContent>
+                  </Card>
+                </Link>
+              )}
+              
+              {/* Comprehensive Assessment */}
+              <Link href="/patient/assessment" className="group">
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                  <CardContent className="p-6 text-center space-y-4">
+                    <div className="bg-gradient-to-r from-brand-blue to-blue-600 p-4 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center shadow-lg">
+                      <Activity className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-brand-blue mb-2">Full Assessment</h3>
+                      <p className="text-sm text-blue-600/70">Complete 65-question evaluation for detailed insights</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-brand-blue mx-auto group-hover:translate-x-1 transition-transform" />
+                  </CardContent>
+                </Card>
+              </Link>
+              
+              {/* Book Consultation */}
+              {patientEmail && (
+                <Link href="/patient/book-appointment" className="group">
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50 hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                    <CardContent className="p-6 text-center space-y-4">
+                      <div className="bg-gradient-to-r from-brand-purple to-purple-600 p-4 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center shadow-lg">
+                        <Calendar className="h-8 w-8 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-brand-purple mb-2">Book Consultation</h3>
+                        <p className="text-sm text-purple-600/70">Schedule with our hormone specialists</p>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-brand-purple mx-auto group-hover:translate-x-1 transition-transform" />
+                    </CardContent>
+                  </Card>
+                </Link>
+              )}
+              
+              {/* Dashboard */}
+              <Link href="/patient/dashboard" className="group">
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50 hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                  <CardContent className="p-6 text-center space-y-4">
+                    <div className="bg-gradient-to-r from-brand-green to-green-600 p-4 rounded-2xl w-16 h-16 mx-auto flex items-center justify-center shadow-lg">
+                      <Target className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-brand-green mb-2">View Dashboard</h3>
+                      <p className="text-sm text-green-600/70">Access your health records and progress</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-brand-green mx-auto group-hover:translate-x-1 transition-transform" />
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
+          </div>
         </div>
+      </div>
       </div>
     )
   }
@@ -597,10 +823,20 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
         
         <Button
           onClick={handleNext}
-          className="bg-gradient-to-r from-brand-green to-brand-blue hover:from-brand-green/90 hover:to-brand-blue/90 text-white border-0 px-6 py-2.5 rounded-xl font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg"
+          disabled={isSaving}
+          className="bg-gradient-to-r from-brand-green to-brand-blue hover:from-brand-green/90 hover:to-brand-blue/90 text-white border-0 px-6 py-2.5 rounded-xl font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
-          {currentStep === screeningQuestions.length - 1 ? 'Complete Screening' : 'Next Question'}
-          <ArrowRight className="h-4 w-4 ml-2" />
+          {isSaving ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+              Saving...
+            </>
+          ) : (
+            <>
+              {currentStep === screeningQuestions.length - 1 ? 'Complete Screening' : 'Next Question'}
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </>
+          )}
         </Button>
       </div>
     </div>
