@@ -777,11 +777,6 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
                                 </span>
                               </div>
                             </Label>
-                            <RadioGroupItem 
-                              value={option.value} 
-                              id={option.value} 
-                              className="sr-only" 
-                            />
                           </div>
                         ))}
                       </RadioGroup>

@@ -10,7 +10,7 @@ export interface Prescription {
   status: 'active' | 'expired' | 'filled' | 'cancelled'
   medications: Medication[]
   doctor_name: string
-  doctor_hpcsa_number: string
+  doctor_registration_number: string
   practice_name?: string
   practice_address?: string
   notes?: string
@@ -98,7 +98,7 @@ export async function getPatientPrescriptions(patientEmail: string): Promise<Pre
         medications (*),
         doctor:doctors (
           full_name,
-          hpcsa_number,
+          primary_registration_number,
           practice_name,          
           practice_address
         )
@@ -123,7 +123,7 @@ export async function getPatientPrescriptions(patientEmail: string): Promise<Pre
     return (prescriptions || []).map(prescription => ({
       ...prescription,
       doctor_name: prescription.doctor?.full_name || 'Unknown Doctor',
-      doctor_hpcsa_number: prescription.doctor?.hpcsa_number || '',
+      doctor_registration_number: prescription.doctor?.primary_registration_number || '',
       practice_name: prescription.doctor?.practice_name,
       practice_address: prescription.doctor?.practice_address,
       medications: prescription.medications || []
@@ -205,7 +205,7 @@ Valid Until: ${formatPrescriptionDate(prescription.valid_until)}
 
 DOCTOR INFORMATION:
 ${prescription.doctor_name}
-HPCSA Number: ${prescription.doctor_hpcsa_number}
+Registration Number: ${prescription.doctor_registration_number}
 ${prescription.practice_name ? `Practice: ${prescription.practice_name}` : ''}
 ${prescription.practice_address ? `Address: ${prescription.practice_address}` : ''}
 
@@ -246,7 +246,7 @@ function getMockPrescriptions(): Prescription[] {
       valid_until: futureDate.toISOString().split('T')[0],
       status: 'active',
       doctor_name: 'Dr. Sarah van der Merwe',
-      doctor_hpcsa_number: 'MP0123456',
+      doctor_registration_number: 'MP0123456',
       practice_name: 'HHWH Online Clinic',
       practice_address: 'Cape Town, South Africa',
       notes: 'Sample prescription for hormone replacement therapy',
@@ -277,7 +277,7 @@ function getMockPrescriptions(): Prescription[] {
       valid_until: today.toISOString().split('T')[0],
       status: 'filled',
       doctor_name: 'Dr. Sarah van der Merwe',
-      doctor_hpcsa_number: 'MP0123456',
+      doctor_registration_number: 'MP0123456',
       practice_name: 'HHWH Online Clinic',
       practice_address: 'Cape Town, South Africa',
       notes: 'Previous prescription - now filled',
