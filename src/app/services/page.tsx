@@ -28,7 +28,8 @@ import {
   Zap,
   Layers,
   Award2,
-  RefreshCw
+  RefreshCw,
+  Package
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -66,17 +67,17 @@ export default function ServicesPage() {
               Expert hormone specialists, comprehensive virtual consultations, and personalized treatment plans designed specifically for South African women aged 35-65.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href={getAuthRedirectUrl("/patient/assessment")}>
+              <Link href={getAuthRedirectUrl("/patient/packages")}>
                 <Button className="btn-healthcare-primary text-lg px-8 py-3 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                  <Zap className="h-5 w-5 mr-2" />
-                  Start Assessment
+                  <Package className="h-5 w-5 mr-2" />
+                  View Care Packages
                   <ArrowRight className="h-5 w-5 ml-2" />
                 </Button>
               </Link>
-              <Link href={getAuthRedirectUrl("/patient/book-appointment")}>
+              <Link href={getAuthRedirectUrl("/patient/assessment")}>
                 <Button variant="outline" className="text-lg px-8 py-3 border-brand-green text-brand-green hover:bg-brand-green hover:text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                  <Calendar className="h-5 w-5 mr-2" />
-                  Book Consultation
+                  <Zap className="h-5 w-5 mr-2" />
+                  Start Assessment
                 </Button>
               </Link>
             </div>
@@ -255,124 +256,180 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* Consultation Types */}
+      {/* Care Packages */}
       <section className="py-20 bg-white/50">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
             <Badge variant="outline" className="mb-4 bg-brand-green/10 text-brand-green border-brand-green/30">
-              Consultation Options
+              Care Packages
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-6">Choose Your Care Path</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-6">Comprehensive Care Packages</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Flexible consultation options designed to meet your needs and work with your medical aid benefits.
+              Complete hormone health packages designed to provide coordinated care from initial assessment through ongoing treatment.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Initial Consultation */}
-            <Card className="border-brand-purple/20 shadow-lg">
-              <CardHeader className="text-center">
-                <div className="w-12 h-12 bg-brand-purple/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Stethoscope className="h-6 w-6 text-brand-purple" />
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Medical Aid Package */}
+            <Card className="border-brand-blue/20 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-4 right-4">
+                <Badge className="bg-brand-blue text-white">Most Popular</Badge>
+              </div>
+              <CardHeader className="text-center pb-6 relative z-10">
+                <div className="w-16 h-16 bg-gradient-to-br from-brand-blue to-brand-green rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-2xl group-hover:scale-110 transition-all duration-500">
+                  <Shield className="h-8 w-8 text-white group-hover:animate-pulse" />
                 </div>
-                <CardTitle className="text-lg">Initial Consultation</CardTitle>
-                <CardDescription>Comprehensive first appointment</CardDescription>
+                <CardTitle className="text-xl font-bold">Package 1 - Medical Aid</CardTitle>
+                <div className="text-4xl font-bold text-brand-blue mb-2">R2,660</div>
+                <CardDescription className="text-base">
+                  Complete package with medical aid billing and procedure codes
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-brand-purple mb-2">R800-1200</div>
-                  <div className="text-sm text-muted-foreground">45-60 minutes</div>
+              <CardContent className="space-y-4 relative z-10">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg">
+                    <div className="w-8 h-8 bg-brand-blue/10 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-brand-blue">1</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Initial GP Consultation</div>
+                      <div className="text-xs text-muted-foreground">45 minutes • R1,000 • Codes: 0129, 0192</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg">
+                    <div className="w-8 h-8 bg-brand-blue/10 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-brand-blue">2</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Follow-up GP Consultation</div>
+                      <div className="text-xs text-muted-foreground">30 minutes • R1,000 • Code: 0130</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg">
+                    <div className="w-8 h-8 bg-brand-blue/10 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-brand-blue">3</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Auxiliary Practitioner</div>
+                      <div className="text-xs text-muted-foreground">30 minutes • R660 • Code: 0130</div>
+                    </div>
+                  </div>
                 </div>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Complete health history review
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Detailed symptom assessment
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Personalized treatment plan
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Prescription if required
-                  </li>
-                </ul>
+                <div className="bg-brand-blue/5 rounded-lg p-4">
+                  <p className="text-sm text-center">
+                    <strong>Medical Aid Coverage:</strong> Est. R1,800-2,400 reimbursement
+                  </p>
+                </div>
+                <Link href={getAuthRedirectUrl("/patient/packages")}>
+                  <Button className="w-full bg-brand-blue hover:bg-brand-blue/90 text-white">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Select Medical Aid Package
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
-            {/* Follow-up Consultation */}
-            <Card className="border-brand-green/20 shadow-lg">
-              <CardHeader className="text-center">
-                <div className="w-12 h-12 bg-brand-green/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="h-6 w-6 text-brand-green" />
+            {/* Cash Package */}
+            <Card className="border-brand-green/20 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute top-4 right-4">
+                <Badge className="bg-brand-green text-white">Best Value</Badge>
+              </div>
+              <CardHeader className="text-center pb-6 relative z-10">
+                <div className="w-16 h-16 bg-gradient-to-br from-brand-green to-brand-purple rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-2xl group-hover:scale-110 transition-all duration-500">
+                  <CreditCard className="h-8 w-8 text-white group-hover:animate-spin" />
                 </div>
-                <CardTitle className="text-lg">Follow-up Consultation</CardTitle>
-                <CardDescription>Ongoing care and monitoring</CardDescription>
+                <CardTitle className="text-xl font-bold">Package 1 - Cash Payment</CardTitle>
+                <div className="text-4xl font-bold text-brand-green mb-2">R2,400</div>
+                <div className="text-sm text-brand-amber mb-2">Save R260</div>
+                <CardDescription className="text-base">
+                  Direct payment with competitive pricing and immediate confirmation
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-brand-green mb-2">R400-600</div>
-                  <div className="text-sm text-muted-foreground">30 minutes</div>
+              <CardContent className="space-y-4 relative z-10">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg">
+                    <div className="w-8 h-8 bg-brand-green/10 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-brand-green">1</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Initial GP Consultation</div>
+                      <div className="text-xs text-muted-foreground">45 minutes • R950</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg">
+                    <div className="w-8 h-8 bg-brand-green/10 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-brand-green">2</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Follow-up GP Consultation</div>
+                      <div className="text-xs text-muted-foreground">30 minutes • R800</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/50 rounded-lg">
+                    <div className="w-8 h-8 bg-brand-green/10 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-brand-green">3</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Auxiliary Practitioner</div>
+                      <div className="text-xs text-muted-foreground">30 minutes • R650</div>
+                    </div>
+                  </div>
                 </div>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Progress review & assessment
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Treatment plan adjustments
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    New prescriptions if needed
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Ongoing support & guidance
-                  </li>
-                </ul>
+                <div className="bg-brand-green/5 rounded-lg p-4">
+                  <p className="text-sm text-center">
+                    <strong>Benefits:</strong> No medical aid wait • Immediate booking • Digital receipts
+                  </p>
+                </div>
+                <Link href={getAuthRedirectUrl("/patient/packages")}>
+                  <Button className="w-full bg-brand-green hover:bg-brand-green/90 text-white">
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Select Cash Package
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
+          </div>
 
-            {/* Treatment Plans */}
-            <Card className="border-brand-blue/20 shadow-lg">
-              <CardHeader className="text-center">
-                <div className="w-12 h-12 bg-brand-blue/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Target className="h-6 w-6 text-brand-blue" />
-                </div>
-                <CardTitle className="text-lg">Treatment Plans</CardTitle>
-                <CardDescription>Comprehensive care packages</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-brand-blue mb-2">R200-500</div>
-                  <div className="text-sm text-muted-foreground">Per month</div>
-                </div>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Monthly progress monitoring
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Lifestyle coaching support
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Educational resources
-                  </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-brand-green" />
-                    Priority booking access
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+          {/* Additional Services */}
+          <div className="mt-16">
+            <div className="text-center mb-12">
+              <h3 className="text-2xl font-bold mb-4">Optional Add-on Services</h3>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Enhance your care package with specialized services and exclusive discounts
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <Card className="border-brand-purple/20 shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-brand-purple/10 rounded-lg flex items-center justify-center">
+                      <Users className="h-6 w-6 text-brand-purple" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold">Dietitian Package + CGM Discount</h4>
+                      <p className="text-sm text-muted-foreground">3 consultations + 10% CGM discount</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-brand-amber/20 shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-brand-amber/10 rounded-lg flex items-center justify-center">
+                      <Brain className="h-6 w-6 text-brand-amber" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold">Counsellor Package + DNAlysis Discount</h4>
+                      <p className="text-sm text-muted-foreground">3 consultations + 15% genetic test discount</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </section>

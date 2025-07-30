@@ -31,7 +31,8 @@ import {
   UserCircle,
   Users,
   UserCheck,
-  BarChart3
+  BarChart3,
+  Package
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -278,6 +279,14 @@ export default function Navbar() {
                   {userRole === 'patient' && (
                     <>
                       <DropdownMenuItem asChild>
+                        <Link href="/patient/packages" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
+                            <Package className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <span className="font-medium">Care Packages</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
                         <Link href="/patient/book-appointment" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100/80 transition-colors">
                           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
                             <Calendar className="h-4 w-4 text-green-600" />
@@ -466,6 +475,14 @@ export default function Navbar() {
                       </Link>
                       {userRole === 'patient' && (
                         <>
+                          <Link 
+                            href="/patient/packages"
+                            className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <Package className="h-4 w-4" />
+                            <span>Care Packages</span>
+                          </Link>
                           <Link 
                             href="/patient/book-appointment"
                             className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-[#217B82]"
