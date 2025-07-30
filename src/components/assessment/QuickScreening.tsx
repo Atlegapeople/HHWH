@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -42,6 +42,7 @@ type QuickScreeningData = z.infer<typeof quickScreeningSchema>
 interface QuickScreeningProps {
   onComplete?: (results: any) => void
   patientEmail?: string
+  patientAge?: number
 }
 
 // Quick scoring algorithm
@@ -194,15 +195,17 @@ const screeningQuestions = [
   }
 ]
 
-export default function QuickScreening({ onComplete, patientEmail }: QuickScreeningProps) {
+export default function QuickScreening({ onComplete, patientEmail, patientAge }: QuickScreeningProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [isCompleted, setIsCompleted] = useState(false)
   const [results, setResults] = useState<any>(null)
 
+  console.log('QuickScreening props:', { patientEmail, patientAge })
+
   const form = useForm<QuickScreeningData>({
     resolver: zodResolver(quickScreeningSchema),
     defaultValues: {
-      age: undefined as any,
+      age: patientAge || undefined as any,
       menstrual_status: undefined as any,
       hot_flashes: undefined as any,
       night_sweats: undefined as any,
@@ -215,6 +218,14 @@ export default function QuickScreening({ onComplete, patientEmail }: QuickScreen
 
   const currentQuestion = screeningQuestions[currentStep]
   const progress = ((currentStep + 1) / screeningQuestions.length) * 100
+
+  // Update form when patientAge is provided
+  useEffect(() => {
+    if (patientAge) {
+      form.setValue('age', patientAge)
+      console.log('QuickScreening: Updated age field with:', patientAge)
+    }
+  }, [patientAge, form])
 
   const handleNext = async () => {
     const fieldName = currentQuestion.id as keyof QuickScreeningData

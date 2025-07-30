@@ -683,6 +683,7 @@ function SymptomAssessmentContent() {
           </div>
           <QuickScreening 
             patientEmail={patientEmail}
+            patientAge={calculatedAge || undefined}
             onComplete={(results) => {
               console.log('Quick screening completed:', results)
               // Could redirect to packages or dashboard based on results
