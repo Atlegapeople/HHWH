@@ -18,10 +18,12 @@ import {
   Heart, 
   Activity, 
   ArrowRight, 
+  ArrowLeft,
   CheckCircle,
   Target,
   Package,
-  Info
+  Info,
+  Calendar
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -200,12 +202,10 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
   const [isCompleted, setIsCompleted] = useState(false)
   const [results, setResults] = useState<any>(null)
 
-  console.log('QuickScreening props:', { patientEmail, patientAge })
-
   const form = useForm<QuickScreeningData>({
     resolver: zodResolver(quickScreeningSchema),
     defaultValues: {
-      age: patientAge || undefined as any,
+      age: undefined as any,
       menstrual_status: undefined as any,
       hot_flashes: undefined as any,
       night_sweats: undefined as any,
@@ -219,13 +219,7 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
   const currentQuestion = screeningQuestions[currentStep]
   const progress = ((currentStep + 1) / screeningQuestions.length) * 100
 
-  // Update form when patientAge is provided
-  useEffect(() => {
-    if (patientAge) {
-      form.setValue('age', patientAge)
-      console.log('QuickScreening: Updated age field with:', patientAge)
-    }
-  }, [patientAge, form])
+  // Don't prepopulate form fields - let users enter their own data
 
   const handleNext = async () => {
     const fieldName = currentQuestion.id as keyof QuickScreeningData
@@ -253,147 +247,177 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
 
   if (isCompleted && results) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Results Header */}
-        <Card>
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <div className="bg-brand-green/10 p-3 rounded-full">
-                <CheckCircle className="h-8 w-8 text-brand-green" />
-              </div>
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Modern Results Header */}
+        <div className="text-center space-y-6">
+          <div className="relative">
+            <div className="bg-gradient-to-r from-brand-green to-brand-blue p-4 rounded-2xl w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg">
+              <CheckCircle className="h-10 w-10 text-white" />
             </div>
-            <CardTitle className="text-2xl">Quick Screening Complete</CardTitle>
-            <CardDescription>
-              Here's your personalized hormone health overview
-            </CardDescription>
-          </CardHeader>
-        </Card>
+            <div className="absolute -top-2 -right-2 bg-white rounded-full p-2 shadow-lg">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <h1 className="text-3xl md:text-4xl font-heading font-bold bg-gradient-to-r from-brand-green to-brand-blue bg-clip-text text-transparent">
+              Screening Complete!
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Your personalized hormone health assessment reveals important insights about your wellness journey
+            </p>
+          </div>
+        </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Hormone Stage */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-brand-purple" />
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Modern Hormone Stage Card */}
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 backdrop-blur-sm overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-brand-green/10 to-brand-blue/10 rounded-full -translate-y-16 translate-x-16" />
+            <CardHeader className="relative">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="bg-gradient-to-r from-brand-green to-brand-blue p-2 rounded-xl">
+                  <Target className="h-6 w-6 text-white" />
+                </div>
                 Hormone Health Stage
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-center">
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-lg font-semibold mb-3 ${
-                  results.hormoneStage === 'premenopause' ? 'bg-brand-green/10 text-brand-green' :
-                  results.hormoneStage === 'perimenopause' ? 'bg-brand-amber/10 text-brand-amber' :
-                  'bg-brand-purple/10 text-brand-purple'
+            <CardContent className="relative space-y-4">
+              <div className="text-center space-y-4">
+                <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl text-xl font-bold mb-3 shadow-lg ${
+                  results.hormoneStage === 'premenopause' ? 'bg-gradient-to-r from-brand-green/20 to-brand-green/10 text-brand-green border-2 border-brand-green/20' :
+                  results.hormoneStage === 'perimenopause' ? 'bg-gradient-to-r from-brand-amber/20 to-brand-amber/10 text-brand-amber border-2 border-brand-amber/20' :
+                  'bg-gradient-to-r from-brand-purple/20 to-brand-purple/10 text-brand-purple border-2 border-brand-purple/20'
                 }`}>
+                  <div className={`w-3 h-3 rounded-full ${
+                    results.hormoneStage === 'premenopause' ? 'bg-brand-green' :
+                    results.hormoneStage === 'perimenopause' ? 'bg-brand-amber' :
+                    'bg-brand-purple'
+                  }`} />
                   {results.hormoneStage === 'premenopause' ? 'Premenopause' :
                    results.hormoneStage === 'perimenopause' ? 'Perimenopause' : 
                    'Postmenopause'}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Score: {results.totalScore}/24
+                <div className="bg-gray-100 rounded-xl p-4">
+                  <div className="text-2xl font-bold text-foreground">{results.totalScore}</div>
+                  <div className="text-sm text-muted-foreground">Total Score out of 24</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Recommended Action */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-brand-blue" />
+          {/* Modern Recommended Action Card */}
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 backdrop-blur-sm overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-brand-blue/10 to-brand-purple/10 rounded-full -translate-y-16 -translate-x-16" />
+            <CardHeader className="relative">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="bg-gradient-to-r from-brand-blue to-brand-purple p-2 rounded-xl">
+                  <Package className="h-6 w-6 text-white" />
+                </div>
                 Recommended Next Step
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold ${
-                    results.urgency === 'urgent' ? 'bg-brand-red/10 text-brand-red' :
-                    results.urgency === 'priority' ? 'bg-brand-amber/10 text-brand-amber' :
-                    'bg-brand-green/10 text-brand-green'
-                  }`}>
-                    <Info className="h-4 w-4" />
-                    {results.urgency === 'urgent' ? 'Urgent Consultation' :
-                     results.urgency === 'priority' ? 'Priority Assessment' : 
-                     'Routine Monitoring'}
-                  </div>
+            <CardContent className="relative space-y-6">
+              <div className="text-center space-y-4">
+                <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-2xl text-lg font-bold shadow-lg ${
+                  results.urgency === 'urgent' ? 'bg-gradient-to-r from-red-500/20 to-red-400/10 text-red-600 border-2 border-red-200' :
+                  results.urgency === 'priority' ? 'bg-gradient-to-r from-brand-amber/20 to-brand-amber/10 text-brand-amber border-2 border-brand-amber/20' :
+                  'bg-gradient-to-r from-brand-green/20 to-brand-green/10 text-brand-green border-2 border-brand-green/20'
+                }`}>
+                  <Info className="h-5 w-5" />
+                  {results.urgency === 'urgent' ? 'Urgent Consultation' :
+                   results.urgency === 'priority' ? 'Priority Assessment' : 
+                   'Routine Monitoring'}
                 </div>
                 
-                <div className="text-xs text-muted-foreground text-center">
-                  {results.recommendedAction === 'immediate_consultation' && 
-                    'We recommend booking a consultation as soon as possible to address your symptoms.'}
-                  {results.recommendedAction === 'comprehensive_assessment' && 
-                    'Consider taking our full assessment for personalized treatment recommendations.'}
-                  {results.recommendedAction === 'routine_monitoring' && 
-                    'Continue monitoring your symptoms and consider regular check-ups.'}
+                <div className="bg-gray-100 rounded-xl p-4 text-center">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {results.recommendedAction === 'immediate_consultation' && 
+                      'We recommend booking a consultation as soon as possible to address your symptoms and develop a personalized treatment plan.'}
+                    {results.recommendedAction === 'comprehensive_assessment' && 
+                      'Your symptoms suggest you would benefit from our comprehensive assessment for detailed analysis and personalized recommendations.'}
+                    {results.recommendedAction === 'routine_monitoring' && 
+                      'Continue monitoring your symptoms with regular check-ups. Consider lifestyle modifications and routine health maintenance.'}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Score Breakdown */}
-        <Card>
+        {/* Modern Score Breakdown */}
+        <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-brand-blue" />
-              Symptom Category Scores
+            <CardTitle className="flex items-center gap-3 text-xl justify-center">
+              <div className="bg-gradient-to-r from-brand-blue to-brand-purple p-2 rounded-xl">
+                <Activity className="h-6 w-6 text-white" />
+              </div>
+              Symptom Category Analysis
             </CardTitle>
+            <CardDescription className="text-center max-w-2xl mx-auto">
+              Your symptoms broken down by category to help identify areas of focus
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="bg-brand-red/10 p-3 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
-                  <Thermometer className="h-6 w-6 text-brand-red" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center group hover:scale-105 transition-transform duration-200">
+                <div className="bg-gradient-to-br from-red-500/10 to-red-400/5 p-4 rounded-2xl w-20 h-20 mx-auto mb-4 flex items-center justify-center group-hover:shadow-lg transition-shadow">
+                  <Thermometer className="h-8 w-8 text-red-500" />
                 </div>
-                <div className="text-xl font-bold text-brand-red">{results.scores.vasomotor}</div>
-                <div className="text-xs text-muted-foreground">Vasomotor</div>
+                <div className="text-3xl font-bold text-red-500 mb-1">{results.scores.vasomotor}</div>
+                <div className="text-sm font-medium text-muted-foreground">Vasomotor</div>
+                <div className="text-xs text-muted-foreground">Hot flashes & sweats</div>
               </div>
-              <div className="text-center">
-                <div className="bg-brand-blue/10 p-3 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
-                  <Brain className="h-6 w-6 text-brand-blue" />
+              <div className="text-center group hover:scale-105 transition-transform duration-200">
+                <div className="bg-gradient-to-br from-brand-blue/10 to-brand-blue/5 p-4 rounded-2xl w-20 h-20 mx-auto mb-4 flex items-center justify-center group-hover:shadow-lg transition-shadow">
+                  <Brain className="h-8 w-8 text-brand-blue" />
                 </div>
-                <div className="text-xl font-bold text-brand-blue">{results.scores.psychological}</div>
-                <div className="text-xs text-muted-foreground">Psychological</div>
+                <div className="text-3xl font-bold text-brand-blue mb-1">{results.scores.psychological}</div>
+                <div className="text-sm font-medium text-muted-foreground">Psychological</div>
+                <div className="text-xs text-muted-foreground">Mood & sleep</div>
               </div>
-              <div className="text-center">
-                <div className="bg-brand-green/10 p-3 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
-                  <Activity className="h-6 w-6 text-brand-green" />
+              <div className="text-center group hover:scale-105 transition-transform duration-200">
+                <div className="bg-gradient-to-br from-brand-green/10 to-brand-green/5 p-4 rounded-2xl w-20 h-20 mx-auto mb-4 flex items-center justify-center group-hover:shadow-lg transition-shadow">
+                  <Activity className="h-8 w-8 text-brand-green" />
                 </div>
-                <div className="text-xl font-bold text-brand-green">{results.scores.physical}</div>
-                <div className="text-xs text-muted-foreground">Physical</div>
+                <div className="text-3xl font-bold text-brand-green mb-1">{results.scores.physical}</div>
+                <div className="text-sm font-medium text-muted-foreground">Physical</div>
+                <div className="text-xs text-muted-foreground">Energy & body</div>
               </div>
-              <div className="text-center">
-                <div className="bg-brand-pink/10 p-3 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
-                  <Heart className="h-6 w-6 text-brand-pink" />
+              <div className="text-center group hover:scale-105 transition-transform duration-200">
+                <div className="bg-gradient-to-br from-brand-pink/10 to-brand-pink/5 p-4 rounded-2xl w-20 h-20 mx-auto mb-4 flex items-center justify-center group-hover:shadow-lg transition-shadow">
+                  <Heart className="h-8 w-8 text-brand-pink" />
                 </div>
-                <div className="text-xl font-bold text-brand-pink">{results.scores.sexual}</div>
-                <div className="text-xs text-muted-foreground">Sexual Health</div>
+                <div className="text-3xl font-bold text-brand-pink mb-1">{results.scores.sexual}</div>
+                <div className="text-sm font-medium text-muted-foreground">Sexual Health</div>
+                <div className="text-xs text-muted-foreground">Intimacy & comfort</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        {/* Modern Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
           {results.urgency === 'urgent' && (
-            <Link href="/patient/packages">
-              <Button className="btn-healthcare-primary">
-                <Package className="h-4 w-4 mr-2" />
+            <Link href="/patient/packages" className="group">
+              <Button className="bg-gradient-to-r from-brand-green to-brand-blue hover:from-brand-green/90 hover:to-brand-blue/90 text-white border-0 px-8 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-xl group-hover:shadow-green-200">
+                <Package className="h-5 w-5 mr-3" />
                 View Care Packages
+                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           )}
-          <Link href="/patient/assessment">
-            <Button variant="outline">
-              <Activity className="h-4 w-4 mr-2" />
+          <Link href="/patient/assessment" className="group">
+            <Button variant="outline" className="border-2 border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg">
+              <Activity className="h-5 w-5 mr-3" />
               Take Full Assessment
+              <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
           {patientEmail && (
-            <Link href="/patient/book-appointment">
-              <Button variant="outline">
+            <Link href="/patient/book-appointment" className="group">
+              <Button variant="outline" className="border-2 border-brand-purple text-brand-purple hover:bg-brand-purple hover:text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg">
+                <Calendar className="h-5 w-5 mr-3" />
                 Book Consultation
+                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           )}
@@ -403,77 +427,118 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Progress Header */}
-      <Card className="mb-6">
-        <CardHeader>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <CardTitle className="text-xl">Quick Hormone Health Screening</CardTitle>
-              <CardDescription>
-                Question {currentStep + 1} of {screeningQuestions.length}
-              </CardDescription>
+    <div className="max-w-3xl mx-auto">
+      {/* Modern Progress Header */}
+      <div className="mb-8">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-3 mb-4">
+            <div className="bg-gradient-to-r from-brand-green to-brand-blue p-2 rounded-xl">
+              <Activity className="h-6 w-6 text-white" />
             </div>
-            <Badge variant="outline" className="text-brand-blue border-brand-blue/30">
+            <h1 className="text-2xl md:text-3xl font-heading font-bold bg-gradient-to-r from-brand-green to-brand-blue bg-clip-text text-transparent">
+              Quick Health Screening
+            </h1>
+          </div>
+          <p className="text-muted-foreground max-w-lg mx-auto">
+            Answer {screeningQuestions.length} essential questions to understand your hormone health stage
+          </p>
+        </div>
+        
+        {/* Sleek Progress Bar */}
+        <div className="relative">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm font-medium text-muted-foreground">
+              Question {currentStep + 1} of {screeningQuestions.length}
+            </span>
+            <Badge className="bg-gradient-to-r from-brand-green to-brand-blue text-white border-0">
               {Math.round(progress)}% Complete
             </Badge>
           </div>
-          <Progress value={progress} className="h-2" />
-        </CardHeader>
-      </Card>
+          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-brand-green to-brand-blue rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
 
-      {/* Question Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-brand-blue/10 p-3 rounded-full">
-              <currentQuestion.icon className="h-6 w-6 text-brand-blue" />
+      {/* Modern Question Card */}
+      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+        <CardHeader className="pb-8">
+          <div className="text-center space-y-4">
+            <div className="bg-gradient-to-br from-brand-green/10 to-brand-blue/10 p-4 rounded-2xl w-20 h-20 mx-auto flex items-center justify-center">
+              <currentQuestion.icon className="h-10 w-10 text-brand-green" />
             </div>
-            <div>
-              <CardTitle className="text-lg">{currentQuestion.title}</CardTitle>
-              <CardDescription>{currentQuestion.question}</CardDescription>
+            <div className="space-y-2">
+              <CardTitle className="text-xl md:text-2xl font-heading text-foreground">
+                {currentQuestion.title}
+              </CardTitle>
+              <CardDescription className="text-base text-muted-foreground max-w-md mx-auto leading-relaxed">
+                {currentQuestion.question}
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-8 pb-8">
           <Form {...form}>
             <FormField
               control={form.control}
               name={currentQuestion.id as keyof QuickScreeningData}
               render={({ field }) => (
-                <FormItem className="space-y-4">
+                <FormItem className="space-y-6">
                   <FormControl>
                     {currentQuestion.type === 'number' ? (
-                      <div className="space-y-2">
-                        <FormLabel>Enter your age</FormLabel>
-                        <input
-                          type="number"
-                          min="18"
-                          max="100"
-                          className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
-                          placeholder="e.g., 45"
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                        />
+                      <div className="space-y-4">
+                        <FormLabel className="text-base font-medium text-center block">Enter your age</FormLabel>
+                        <div className="max-w-xs mx-auto">
+                          <input
+                            type="number"
+                            min="18"
+                            max="100"
+                            className="w-full p-4 text-center text-lg font-medium border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-green focus:border-brand-green transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                            placeholder="45"
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                          />
+                        </div>
                       </div>
                     ) : (
                       <RadioGroup
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="space-y-3"
+                        value={field.value}
+                        className="space-y-3 max-w-2xl mx-auto"
                       >
                         {currentQuestion.options?.map((option) => (
-                          <div key={option.value} className="flex items-start space-x-3 p-4 rounded-lg border border-gray-200 hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all cursor-pointer">
-                            <RadioGroupItem value={option.value} id={option.value} className="mt-1" />
-                            <Label className="flex-1 cursor-pointer" htmlFor={option.value}>
-                              {option.label}
+                          <div key={option.value} className="relative">
+                            <input
+                              type="radio"
+                              value={option.value}
+                              id={option.value}
+                              className="sr-only peer"
+                              {...field}
+                              checked={field.value === option.value}
+                              onChange={() => field.onChange(option.value)}
+                            />
+                            <Label 
+                              className="flex items-center w-full p-4 rounded-xl border-2 border-gray-200 cursor-pointer transition-all duration-200 hover:border-brand-green/40 hover:bg-brand-green/5 peer-checked:border-brand-green peer-checked:bg-gradient-to-r peer-checked:from-brand-green/10 peer-checked:to-brand-blue/10 peer-checked:shadow-lg peer-checked:scale-[1.02]" 
+                              htmlFor={option.value}
+                            >
+                              <div className="flex items-center space-x-4 w-full">
+                                <div className="w-5 h-5 border-2 border-gray-300 rounded-full flex items-center justify-center peer-checked:border-brand-green peer-checked:bg-brand-green transition-all duration-200">
+                                  <div className="w-2 h-2 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity duration-200" />
+                                </div>
+                                <span className="flex-1 text-sm md:text-base font-medium text-foreground leading-relaxed">
+                                  {option.label}
+                                </span>
+                              </div>
                             </Label>
                           </div>
                         ))}
                       </RadioGroup>
                     )}
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-center" />
                 </FormItem>
               )}
             />
@@ -481,20 +546,36 @@ export default function QuickScreening({ onComplete, patientEmail, patientAge }:
         </CardContent>
       </Card>
 
-      {/* Navigation */}
-      <div className="flex justify-between mt-6">
+      {/* Modern Navigation */}
+      <div className="flex justify-between items-center mt-8">
         <Button
-          variant="outline"
+          variant="ghost"
           onClick={handlePrevious}
           disabled={currentStep === 0}
+          className="text-muted-foreground hover:text-foreground disabled:opacity-30 transition-all duration-200"
         >
+          <ArrowLeft className="h-4 w-4 mr-2" />
           Previous
         </Button>
+        
+        <div className="flex items-center gap-2">
+          {screeningQuestions.map((_, index) => (
+            <div
+              key={index}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                index <= currentStep 
+                  ? 'bg-gradient-to-r from-brand-green to-brand-blue scale-125' 
+                  : 'bg-gray-200'
+              }`}
+            />
+          ))}
+        </div>
+        
         <Button
           onClick={handleNext}
-          className="btn-healthcare-primary"
+          className="bg-gradient-to-r from-brand-green to-brand-blue hover:from-brand-green/90 hover:to-brand-blue/90 text-white border-0 px-6 py-2.5 rounded-xl font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg"
         >
-          {currentStep === screeningQuestions.length - 1 ? 'Complete Screening' : 'Next'}
+          {currentStep === screeningQuestions.length - 1 ? 'Complete Screening' : 'Next Question'}
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </div>
